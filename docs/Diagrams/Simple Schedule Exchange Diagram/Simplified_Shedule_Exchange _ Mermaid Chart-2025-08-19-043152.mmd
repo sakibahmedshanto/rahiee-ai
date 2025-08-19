@@ -1,0 +1,169 @@
+flowchart TD
+    A[App Launch] --> B{User Type Selection}
+    
+    %% Employee Flow
+    B -->|Employee| C[Employee Login]
+    C --> D{Authentication}
+    D -->|Success| E[Employee Dashboard]
+    D -->|Failed| C
+    
+    E --> F[Clock In/Out]
+    E --> G[Leave Request]
+    E --> H[Complaints/Comments]
+    E --> I[View Schedule]
+    E --> J[Profile Settings]
+    E --> K[Coverage History]
+    
+    %% Simplified Clock In/Out Flow with Coverage Option
+    F --> L{Check-in Type}
+    L -->|For Myself| M[Take My Photo]
+    L -->|For Colleague| N[Select Colleague Name]
+    
+    %% Self Check-in Path
+    M --> O{My Uniform Check}
+    O -->|Valid| P[My Location Capture]
+    O -->|Invalid| Q[Retake My Photo]
+    Q --> M
+    P --> R[Record: Self Attendance]
+    R --> S[Save: Scheduled-Shanto, Worked-Shanto]
+    S --> E
+    
+    %% Colleague Coverage Path
+    N --> T[Take Photo for Coverage]
+    T --> U{Uniform Check}
+    U -->|Valid| V[Location Capture]
+    U -->|Invalid| W[Retake Photo]
+    W --> T
+    V --> X[Record: Coverage Attendance]
+    X --> Y[Save: Scheduled-Shanto, Worked-Karim]
+    Y --> Z[Optional: Add Coverage Note]
+    Z --> E
+    
+    %% Coverage History View
+    K --> AA[My Coverage Given]
+    K --> BB[Coverage Received]
+    K --> CC[Team Coverage Stats]
+    AA --> DD[List: I worked for whom]
+    BB --> EE[List: Who worked for me]
+    CC --> FF[Department Coverage Summary]
+    DD --> E
+    EE --> E
+    FF --> E
+    
+    %% Leave Request Flow
+    G --> GG[Select Leave Type]
+    GG --> HH[Choose Dates]
+    HH --> II[Add Reason]
+    II --> JJ[Submit Request]
+    JJ --> KK[Pending Approval]
+    KK --> E
+    
+    %% Complaints/Comments Flow
+    H --> LL[Write Message]
+    LL --> MM[Select Category]
+    MM --> NN[Attach Files/Photos]
+    NN --> OO[Submit to Admin]
+    OO --> PP[Confirmation]
+    PP --> E
+    
+    %% Schedule View
+    I --> QQ[Calendar View]
+    QQ --> RR[Shift Details]
+    RR --> SS[Coverage History for This Shift]
+    SS --> E
+    
+    %% Admin Flow
+    B -->|Admin/CEO| TT[Admin Login]
+    TT --> UU{Authentication}
+    UU -->|Success| VV[Admin Dashboard]
+    UU -->|Failed| TT
+    
+    VV --> WW[Attendance Monitor]
+    VV --> XX[Leave Management]
+    VV --> YY[View Complaints]
+    VV --> ZZ[Schedule Management]
+    VV --> AAA[Analytics & Reports]
+    VV --> BBB[Employee Management]
+    VV --> CCC[Coverage Analytics]
+    
+    %% Enhanced Attendance Monitor with Coverage
+    WW --> DDD[Real-time Status]
+    DDD --> EEE[Today's Coverage Summary]
+    EEE --> FFF{Coverage Type}
+    FFF -->|Self Attendance| GGG[Normal Attendance View]
+    FFF -->|Coverage Attendance| HHH[Coverage Details View]
+    
+    GGG --> III[Employee Photos & Times]
+    HHH --> JJJ[Scheduled vs Actual Worker]
+    III --> KKK[Attendance History]
+    JJJ --> LLL[Coverage Patterns]
+    KKK --> VV
+    LLL --> VV
+    
+    %% Coverage Analytics (New Section)
+    CCC --> MMM[Coverage Statistics]
+    CCC --> NNN[Top Coverage Providers]
+    CCC --> OOO[Most Covered Employees]
+    CCC --> PPP[Coverage Trends]
+    
+    MMM --> QQQ[Weekly/Monthly Coverage %]
+    NNN --> RRR[Employees Who Help Most]
+    OOO --> SSS[Employees Who Need Most Help]
+    PPP --> TTT[Coverage Patterns Over Time]
+    QQQ --> VV
+    RRR --> VV
+    SSS --> VV
+    TTT --> VV
+    
+    %% Leave Management
+    XX --> UUU[Pending Requests]
+    UUU --> VVV{Decision}
+    VVV -->|Approve| WWW[Send Approval]
+    VVV -->|Reject| XXX[Send Rejection]
+    WWW --> YYY[Update Employee]
+    XXX --> YYY
+    YYY --> VV
+    
+    %% Complaints Management
+    YY --> ZZZ[View All Reports]
+    ZZZ --> AAAA[Complaint Details]
+    AAAA --> BBBB[Respond to Employee]
+    BBBB --> CCCC[Mark as Resolved]
+    CCCC --> VV
+    
+    %% Schedule Management
+    ZZ --> DDDD[Create Schedules]
+    DDDD --> EEEE[Assign to Employees]
+    EEEE --> FFFF[Send Notifications]
+    FFFF --> VV
+    
+    %% Analytics
+    AAA --> GGGG[Attendance Stats]
+    AAA --> HHHH[Leave Analytics]
+    AAA --> IIII[Performance Reports]
+    AAA --> JJJJ[Coverage Impact Reports]
+    GGGG --> VV
+    HHHH --> VV
+    IIII --> VV
+    JJJJ --> VV
+    
+    %% Employee Management
+    BBB --> KKKK[Employee List]
+    KKKK --> LLLL[Profile Details]
+    LLLL --> MMMM[Edit Information]
+    LLLL --> NNNN[Coverage History]
+    MMMM --> VV
+    NNNN --> VV
+    
+    %% Styling
+    classDef employee fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef admin fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef process fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef coverage fill:#e8f5e8,stroke:#388e3c,stroke-width:3px
+    
+    class C,E,F,G,H,I,J,K,M,P,R,S,N,T,V,X,Y,Z,AA,BB,CC,DD,EE,FF,GG,HH,II,JJ,KK,LL,MM,NN,OO,PP,QQ,RR,SS employee
+    class TT,VV,WW,XX,YY,ZZ,AAA,BBB,CCC,DDD,EEE,III,JJJ,KKK,LLL,MMM,NNN,OOO,PPP,QQQ,RRR,SSS,TTT,UUU,WWW,XXX,YYY,ZZZ,AAAA,BBBB,CCCC,DDDD,EEEE,FFFF,GGGG,HHHH,IIII,JJJJ,KKKK,LLLL,MMMM,NNNN admin
+    class A,Q,W process
+    class B,D,UU,O,U,L,FFF,VVV decision
+    class K,N,T,X,Y,Z,AA,BB,CC,DD,EE,FF,CCC,MMM,NNN,OOO,PPP,QQQ,RRR,SSS,TTT,JJJJ,NNNN coverage

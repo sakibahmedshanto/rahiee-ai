@@ -1,0 +1,111 @@
+flowchart TD
+    A[App Launch] --> B{User Type Selection}
+    
+    %% Employee Flow
+    B -->|Employee| C[Employee Login]
+    C --> D{Authentication}
+    D -->|Success| E[Employee Dashboard]
+    D -->|Failed| C
+    
+    E --> F[Clock In/Out]
+    E --> G[Leave Request]
+    E --> H[Complaints/Comments]
+    E --> I[View Schedule]
+    E --> J[Profile Settings]
+    
+    %% Clock In/Out Flow
+    F --> K[Take Photo]
+    K --> L{Uniform Check}
+    L -->|Valid| M[Location Capture]
+    L -->|Invalid| N[Retake Photo]
+    N --> K
+    M --> O[Timestamp Record]
+    O --> P[Attendance Saved]
+    P --> E
+    
+    %% Leave Request Flow
+    G --> Q[Select Leave Type]
+    Q --> R[Choose Dates]
+    R --> S[Add Reason]
+    S --> T[Submit Request]
+    T --> U[Pending Approval]
+    U --> E
+    
+    %% Complaints/Comments Flow
+    H --> V[Write Message]
+    V --> W[Select Category]
+    W --> X[Attach Files/Photos]
+    X --> Y[Submit to Admin]
+    Y --> Z[Confirmation]
+    Z --> E
+    
+    %% Schedule View
+    I --> AA[Calendar View]
+    AA --> BB[Shift Details]
+    BB --> E
+    
+    %% Admin Flow
+    B -->|Admin/CEO| CC[Admin Login]
+    CC --> DD{Authentication}
+    DD -->|Success| EE[Admin Dashboard]
+    DD -->|Failed| CC
+    
+    EE --> FF[Attendance Monitor]
+    EE --> GG[Leave Management]
+    EE --> HH[View Complaints]
+    EE --> II[Schedule Management]
+    EE --> JJ[Analytics & Reports]
+    EE --> KK[Employee Management]
+    
+    %% Attendance Monitor
+    FF --> LL[Real-time Status]
+    LL --> MM[Employee Photos]
+    MM --> NN[Attendance History]
+    NN --> EE
+    
+    %% Leave Management
+    GG --> OO[Pending Requests]
+    OO --> PP{Decision}
+    PP -->|Approve| QQ[Send Approval]
+    PP -->|Reject| RR[Send Rejection]
+    QQ --> SS[Update Employee]
+    RR --> SS
+    SS --> EE
+    
+    %% Complaints Management
+    HH --> TT[View All Reports]
+    TT --> UU[Complaint Details]
+    UU --> VV[Respond to Employee]
+    VV --> WW[Mark as Resolved]
+    WW --> EE
+    
+    %% Schedule Management
+    II --> XX[Create Schedules]
+    XX --> YY[Assign to Employees]
+    YY --> ZZ[Send Notifications]
+    ZZ --> EE
+    
+    %% Analytics
+    JJ --> AAA[Attendance Stats]
+    JJ --> BBB[Leave Analytics]
+    JJ --> CCC[Performance Reports]
+    AAA --> EE
+    BBB --> EE
+    CCC --> EE
+    
+    %% Employee Management
+    KK --> DDD[Employee List]
+    DDD --> EEE[Profile Details]
+    EEE --> FFF[Edit Information]
+    FFF --> EE
+    
+    %% Styling
+    classDef employee fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef admin fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef process fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    
+    class C,E,F,G,H,I,J,K,M,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,BB employee
+    class CC,EE,FF,GG,HH,II,JJ,KK,LL,MM,NN,OO,QQ,RR,SS,TT,UU,VV,WW,XX,YY,ZZ,AAA,BBB,CCC,DDD,EEE,FFF admin
+    class A,N process
+    class B,D,DD,L,PP decision

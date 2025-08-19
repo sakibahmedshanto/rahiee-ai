@@ -1,0 +1,182 @@
+flowchart TD
+    A[App Launch] --> B{User Type Selection}
+    
+    %% Employee Flow
+    B -->|Employee| C[Employee Login]
+    C --> D{Authentication}
+    D -->|Success| E[Employee Dashboard]
+    D -->|Failed| C
+    
+    E --> F[Clock In/Out]
+    E --> G[Leave Request]
+    E --> H[Complaints/Comments]
+    E --> I[View Schedule]
+    E --> J[Profile Settings]
+    E --> K[Shift Exchange]
+    
+    %% Clock In/Out Flow
+    F --> L[Take Photo]
+    L --> M{Uniform Check}
+    M -->|Valid| N[Location Capture]
+    M -->|Invalid| O[Retake Photo]
+    O --> L
+    N --> P[Timestamp Record]
+    P --> Q[Attendance Saved]
+    Q --> E
+    
+    %% Leave Request Flow
+    G --> R[Select Leave Type]
+    R --> S[Choose Dates]
+    S --> T[Add Reason]
+    T --> U[Submit Request]
+    U --> V[Pending Approval]
+    V --> E
+    
+    %% Complaints/Comments Flow
+    H --> W[Write Message]
+    W --> X[Select Category]
+    X --> Y[Attach Files/Photos]
+    Y --> Z[Submit to Admin]
+    Z --> AA[Confirmation]
+    AA --> E
+    
+    %% Schedule View
+    I --> BB[Calendar View]
+    BB --> CC[Shift Details]
+    CC --> DD{Action Options}
+    DD -->|Request Change| K
+    DD -->|View Only| E
+    
+    %% NEW: Shift Exchange Flow
+    K --> EE{Exchange Type}
+    EE -->|Offer My Shift| FF[Select Shift to Offer]
+    EE -->|Find Available Shifts| GG[Browse Available Shifts]
+    EE -->|My Requests Status| HH[View My Requests]
+    
+    %% Offer Shift Path
+    FF --> II[Add Reason for Change]
+    II --> JJ[Set Minimum Notice]
+    JJ --> KK[Post Shift for Exchange]
+    KK --> LL[Notify Eligible Employees]
+    LL --> MM[Wait for Responses]
+    MM --> E
+    
+    %% Find Available Shifts Path
+    GG --> NN[Filter by Date/Time]
+    NN --> OO[View Shift Details]
+    OO --> PP{Action Choice}
+    PP -->|Request Swap| QQ[Offer Counter-Shift]
+    PP -->|Direct Pickup| RR[Request Direct Assignment]
+    PP -->|Cancel| GG
+    
+    QQ --> SS[Select My Shift to Offer]
+    SS --> TT[Submit Swap Request]
+    RR --> UU[Submit Pickup Request]
+    TT --> VV[Pending Both Approvals]
+    UU --> VV
+    VV --> E
+    
+    %% Request Status Path
+    HH --> WW[Pending Requests]
+    HH --> XX[Completed Swaps]
+    HH --> YY[Rejected Requests]
+    WW --> ZZ[Request Details]
+    XX --> AAA[Swap History]
+    YY --> BBB[Rejection Reasons]
+    ZZ --> E
+    AAA --> E
+    BBB --> E
+    
+    %% Admin Flow
+    B -->|Admin/CEO| CCC[Admin Login]
+    CCC --> DDD{Authentication}
+    DDD -->|Success| EEE[Admin Dashboard]
+    DDD -->|Failed| CCC
+    
+    EEE --> FFF[Attendance Monitor]
+    EEE --> GGG[Leave Management]
+    EEE --> HHH[View Complaints]
+    EEE --> III[Schedule Management]
+    EEE --> JJJ[Analytics & Reports]
+    EEE --> KKK[Employee Management]
+    EEE --> LLL[Shift Exchange Management]
+    
+    %% Attendance Monitor
+    FFF --> MMM[Real-time Status]
+    MMM --> NNN[Employee Photos]
+    NNN --> OOO[Attendance History]
+    OOO --> EEE
+    
+    %% Leave Management
+    GGG --> PPP[Pending Requests]
+    PPP --> QQQ{Decision}
+    QQQ -->|Approve| RRR[Send Approval]
+    QQQ -->|Reject| SSS[Send Rejection]
+    RRR --> TTT[Update Employee]
+    SSS --> TTT
+    TTT --> EEE
+    
+    %% Complaints Management
+    HHH --> UUU[View All Reports]
+    UUU --> VVV[Complaint Details]
+    VVV --> WWW[Respond to Employee]
+    WWW --> XXX[Mark as Resolved]
+    XXX --> EEE
+    
+    %% Schedule Management
+    III --> YYY[Create Schedules]
+    YYY --> ZZZ[Assign to Employees]
+    ZZZ --> AAAA[Send Notifications]
+    AAAA --> EEE
+    
+    %% NEW: Shift Exchange Management
+    LLL --> BBBB[Pending Swap Requests]
+    LLL --> CCCC[Shift Exchange History]
+    LLL --> DDDD[Exchange Rules Settings]
+    
+    BBBB --> EEEE{Review Request}
+    EEEE -->|Approve| FFFF[Approve & Update Schedules]
+    EEEE -->|Reject| GGGG[Reject with Reason]
+    FFFF --> HHHH[Notify Both Employees]
+    GGGG --> HHHH
+    HHHH --> EEE
+    
+    CCCC --> IIII[View All Exchanges]
+    IIII --> JJJJ[Export Reports]
+    JJJJ --> EEE
+    
+    DDDD --> KKKK[Set Notice Period]
+    DDDD --> LLLL[Set Exchange Limits]
+    DDDD --> MMMM[Define Eligibility Rules]
+    KKKK --> EEE
+    LLLL --> EEE
+    MMMM --> EEE
+    
+    %% Analytics
+    JJJ --> NNNN[Attendance Stats]
+    JJJ --> OOOO[Leave Analytics]
+    JJJ --> PPPP[Performance Reports]
+    JJJ --> QQQQ[Shift Exchange Analytics]
+    NNNN --> EEE
+    OOOO --> EEE
+    PPPP --> EEE
+    QQQQ --> EEE
+    
+    %% Employee Management
+    KKK --> RRRR[Employee List]
+    RRRR --> SSSS[Profile Details]
+    SSSS --> TTTT[Edit Information]
+    TTTT --> EEE
+    
+    %% Styling
+    classDef employee fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef admin fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef process fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef shiftExchange fill:#fff8e1,stroke:#f57f17,stroke-width:3px
+    
+    class C,E,F,G,H,I,J,K,L,N,P,Q,R,S,T,U,V,W,X,Y,Z,AA,BB,CC,FF,II,JJ,KK,LL,MM,GG,NN,OO,QQ,SS,TT,RR,UU,VV,HH,WW,XX,YY,ZZ,AAA,BBB employee
+    class CCC,EEE,FFF,GGG,HHH,III,JJJ,KKK,LLL,MMM,NNN,OOO,PPP,RRR,SSS,TTT,UUU,VVV,WWW,XXX,YYY,ZZZ,AAAA,BBBB,CCCC,DDDD,FFFF,GGGG,HHHH,IIII,JJJJ,KKKK,LLLL,MMMM,NNNN,OOOO,PPPP,QQQQ,RRRR,SSSS,TTTT admin
+    class A,O process
+    class B,D,DDD,M,QQQ,DD,EE,PP,EEEE decision
+    class K,FF,II,JJ,KK,LL,MM,GG,NN,OO,QQ,SS,TT,RR,UU,VV,HH,WW,XX,YY,ZZ,AAA,BBB,LLL,BBBB,CCCC,DDDD,FFFF,GGGG,HHHH,IIII,JJJJ,KKKK,LLLL,MMMM,QQQQ shiftExchange
