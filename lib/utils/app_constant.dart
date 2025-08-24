@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 class AppConstant {
   static String appMainName = 'Rahiee.AI';
   static String appPoweredBy = 'Powered By TanAiNent UK Global';
+  static String appTagline = 'Turn Your Thinking Into Traction';
   
   // 🐦 VIBRANT NATURE - Inspired by Company Logo Color Palette
   static const Color primaryColor = Color(0xFF1E88E5); // Vibrant Blue (main bird)

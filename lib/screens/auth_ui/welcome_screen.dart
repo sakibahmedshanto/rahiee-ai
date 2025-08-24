@@ -203,7 +203,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: 20),
                               child: Text(
-                                "Find your home in Augmented Reality",
+                                AppConstant.appTagline,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 15,
