@@ -1,16 +1,18 @@
 // ignore_for_file: file_names, unused_local_variable, unused_field, avoid_print
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shondhan/screens/Landing_Screen/landing_screen.dart';
+import '../../screens/landing_screen/landing_screen.dart';
 import 'get_device_token_controller.dart';
-import '../../screens/models/user-model.dart';
+import '../../models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleSignInController extends GetxController {
-  final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['profile', 'email']);
+  final GoogleSignIn googleSignIn = GoogleSignIn(
+    scopes: ['profile', 'email'],
+  );
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> signInWithGoogle() async {
@@ -38,18 +40,18 @@ class GoogleSignInController extends GetxController {
         if (user != null) {
           UserModel userModel = UserModel(
             uId: user.uid,
+            employeeId: 'EMP-${user.uid.substring(0, 8).toUpperCase()}', // Generate employee ID
             username: user.displayName.toString(),
             email: user.email.toString(),
-            phone: user.phoneNumber.toString(),
-            userImg: user.photoURL.toString(),
+            phone: user.phoneNumber?.toString() ?? '',
+            fullName: user.displayName.toString(),
+            department: 'General', // Default department
+            position: 'Employee', // Default position
+            userRole: 'employee', // Default role
+            userImg: user.photoURL?.toString(),
             userDeviceToken: getDeviceTokenController.deviceToken.toString(),
-            country: '',
-            userAddress: '',
-            street: '',
-            isAdmin: false,
             isActive: true,
             createdOn: DateTime.now(),
-            city: '',
           );
 
           await FirebaseFirestore.instance

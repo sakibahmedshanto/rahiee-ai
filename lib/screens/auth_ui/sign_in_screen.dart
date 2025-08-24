@@ -3,12 +3,15 @@
 import '../../../controllers/auth_controller/sign_in_controller.dart';
 import 'sign_up_screen.dart';
 import '../../utils/app_constant.dart';
+import '../../models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 import '../../../controllers/auth_controller/get_user_data_controller.dart';
 import 'forget_password_screen.dart';
+import '../admin/admin_screen.dart';
+import '../landing_screen/landing_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});

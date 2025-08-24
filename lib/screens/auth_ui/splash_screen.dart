@@ -2,10 +2,14 @@
 import 'dart:async';
 import '../../../controllers/auth_controller/get_user_data_controller.dart';
 import '../../utils/app_constant.dart';
+import '../../models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import '../admin/admin_screen.dart';
+import '../landing_screen/landing_screen.dart';
+import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,10 +38,10 @@ class _SplashScreenState extends State<SplashScreen> {
       if (userData[0]['isAdmin'] == true) {
         Get.offAll(() => AdminScreen());
       } else {
-        Get.offAll(() => LandingScreen(userModel: userModel!,));
+        Get.offAll(() => LandingScreen(userModel: userModel!));
       }
     } else {
-      Get.to(() => ViewserSlider());
+      Get.to(() => WelcomeScreen());
     }
   }
 
