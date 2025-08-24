@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               width: Get.width/1.2,
               alignment: Alignment.center,
-              child: Lottie.asset('assets/images/splash_animation.json'),
+              child: Lottie.asset('assets/lottie/loading_lottie.json'),
             ),
             Text("Loading...", style: TextStyle(
                   color: AppConstant.appTextColor,

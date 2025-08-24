@@ -139,7 +139,7 @@ class _SignInScreenState extends State<SignInScreen>
                                   ],
                                 ),
                                 child: Image.asset(
-                                  'assets/images/logo.png',
+                                  'assets/logo/tanainent_logo.png',
                                   height: isKeyboardVisible ? 60 : 100,
                                   fit: BoxFit.contain,
                                 ),

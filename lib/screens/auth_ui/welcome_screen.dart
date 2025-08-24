@@ -168,7 +168,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                                       ],
                                     ),
                                     child: Image.asset(
-                                      'assets/images/logo.png',
+                                      'assets/logo/tanainent_logo.png',
                                       height: Get.height * 0.15,
                                       fit: BoxFit.contain,
                                     ),
@@ -334,7 +334,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/images/final-google-logo.png',
+                'assets/icons/google_icon.png',
                 width: 24,
                 height: 24,
               ),

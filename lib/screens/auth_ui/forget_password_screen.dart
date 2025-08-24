@@ -152,7 +152,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                                   ],
                                 ),
                                 child: Image.asset(
-                                  'assets/images/logo.png',
+                                  'assets/logo/tanainent_logo.png',
                                   height: isKeyboardVisible ? 50 : 80,
                                   fit: BoxFit.contain,
                                 ),

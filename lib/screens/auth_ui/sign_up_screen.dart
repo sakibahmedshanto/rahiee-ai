@@ -136,7 +136,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
                                   ],
                                 ),
                                 child: Image.asset(
-                                  'assets/images/logo.png',
+                                  'assets/logo/tanainent_logo.png',
                                   height: isKeyboardVisible ? 40 : 70,
                                   fit: BoxFit.contain,
                                 ),

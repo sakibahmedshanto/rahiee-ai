@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 
 class AppConstant {
-  static String appMainName = 'Shondhan';
-  static String appPoweredBy = 'Powered By Team Taranga';
+  static String appMainName = 'Rahiee.AI';
+  static String appPoweredBy = 'Powered By TanAiNent UK Global';
   
   // 🌟 MIDNIGHT ELEGANCE - Premium Professional Color Palette
   static const Color primaryColor = Color(0xFF0F0F23); // Midnight Black
