@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../models/user_model.dart';
 import '../../utils/app_constant.dart';
+import '../../controllers/landing_controller.dart';
 
 class LandingScreen extends StatefulWidget {
   final UserModel userModel;
@@ -20,6 +21,9 @@ class LandingScreen extends StatefulWidget {
 class _LandingScreenState extends State<LandingScreen> {
   @override
   Widget build(BuildContext context) {
+    final LandingController controller = Get.put(LandingController());
+    controller.initializeWithUser(widget.userModel);
+    
     return Scaffold(
       backgroundColor: AppConstant.appBackgroundColor,
       appBar: AppBar(
@@ -35,9 +39,7 @@ class _LandingScreenState extends State<LandingScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            onPressed: () {
-              // TODO: Add logout functionality
-            },
+            onPressed: controller.onLogoutPressed,
             icon: Icon(
               Icons.logout,
               color: AppConstant.appTextColor,
@@ -75,10 +77,10 @@ class _LandingScreenState extends State<LandingScreen> {
                         CircleAvatar(
                           radius: 30,
                           backgroundColor: AppConstant.appMainColor,
-                          backgroundImage: widget.userModel.userImg != null
-                              ? NetworkImage(widget.userModel.userImg!)
+                          backgroundImage: controller.userImage != null
+                              ? NetworkImage(controller.userImage!)
                               : null,
-                          child: widget.userModel.userImg == null
+                          child: controller.userImage == null
                               ? Icon(
                                   Icons.person,
                                   color: Colors.white,
@@ -92,7 +94,7 @@ class _LandingScreenState extends State<LandingScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Welcome back,',
+                                controller.welcomeMessage,
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 14,
@@ -100,7 +102,7 @@ class _LandingScreenState extends State<LandingScreen> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                widget.userModel.fullName,
+                                controller.userDisplayName,
                                 style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 18,
@@ -108,7 +110,7 @@ class _LandingScreenState extends State<LandingScreen> {
                                 ),
                               ),
                               Text(
-                                widget.userModel.position,
+                                controller.userPosition,
                                 style: TextStyle(
                                   color: AppConstant.appMainColor,
                                   fontSize: 14,
@@ -155,11 +157,11 @@ class _LandingScreenState extends State<LandingScreen> {
                 ),
                 child: Column(
                   children: [
-                    _buildInfoRow('Employee ID', widget.userModel.employeeId),
-                    _buildInfoRow('Email', widget.userModel.email),
-                    _buildInfoRow('Phone', widget.userModel.phone),
-                    _buildInfoRow('Department', widget.userModel.department),
-                    _buildInfoRow('Role', widget.userModel.userRole.toUpperCase()),
+                    _buildInfoRow('Employee ID', controller.userEmployeeId),
+                    _buildInfoRow('Email', controller.userEmail),
+                    _buildInfoRow('Phone', controller.userPhone),
+                    _buildInfoRow('Department', controller.userDepartment),
+                    _buildInfoRow('Role', controller.userRole),
                   ],
                 ),
               ),
@@ -189,34 +191,22 @@ class _LandingScreenState extends State<LandingScreen> {
                   _buildActionCard(
                     icon: Icons.access_time,
                     title: 'Attendance',
-                    onTap: () {
-                      // TODO: Navigate to attendance screen
-                      Get.snackbar('Coming Soon', 'Attendance feature will be available soon');
-                    },
+                    onTap: controller.onAttendancePressed,
                   ),
                   _buildActionCard(
                     icon: Icons.calendar_today,
                     title: 'Schedule',
-                    onTap: () {
-                      // TODO: Navigate to schedule screen
-                      Get.snackbar('Coming Soon', 'Schedule feature will be available soon');
-                    },
+                    onTap: controller.onSchedulePressed,
                   ),
                   _buildActionCard(
                     icon: Icons.person,
                     title: 'Profile',
-                    onTap: () {
-                      // TODO: Navigate to profile screen
-                      Get.snackbar('Coming Soon', 'Profile feature will be available soon');
-                    },
+                    onTap: controller.onProfilePressed,
                   ),
                   _buildActionCard(
                     icon: Icons.settings,
                     title: 'Settings',
-                    onTap: () {
-                      // TODO: Navigate to settings screen
-                      Get.snackbar('Coming Soon', 'Settings feature will be available soon');
-                    },
+                    onTap: controller.onSettingsPressed,
                   ),
                 ],
               ),

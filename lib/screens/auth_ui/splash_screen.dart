@@ -1,53 +1,18 @@
 // ignore_for_file: file_names, avoid_unnecessary_containers, prefer_const_constructors, prefer_const_literals_to_create_immutables, sized_box_for_whitespace
-import 'dart:async';
-import '../../../controllers/auth_controller/get_user_data_controller.dart';
-import '../../utils/app_constant.dart';
-import '../../models/user_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
-import '../admin/admin_screen.dart';
-import '../landing_screen/landing_screen.dart';
-import 'welcome_screen.dart';
+import '../../utils/app_constant.dart';
+import '../../controllers/splash_controller.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  User? user = FirebaseAuth.instance.currentUser;
-  @override
-  void initState() {
-    super.initState();
-    Timer(Duration(seconds: 3), () {
-      loggdin(context);
-    });
-  }
-
-  Future<void> loggdin(BuildContext context) async {
-    if (user != null) {
-      final GetUserDataController getUserDataController =
-          Get.put(GetUserDataController());
-      var userData = await getUserDataController.getUserData(user!.uid);
-      UserModel? userModel = await getUserDataController.getUserModel(user!.uid);
-
-      if (userData[0]['userRole'] == "admin") {
-        Get.offAll(() => AdminScreen());
-      } else {
-        Get.offAll(() => LandingScreen(userModel: userModel!));
-      }
-    } else {
-      Get.to(() => WelcomeScreen());
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    //final size = MediaQuery.of(context).size;
+    // Initialize controller (logic will run automatically)
+    Get.put(SplashController());
+    
     return Scaffold(
       backgroundColor: AppConstant.appScendoryColor,
       appBar: AppBar(
@@ -55,31 +20,35 @@ class _SplashScreenState extends State<SplashScreen> {
         elevation: 0,
       ),
       body: Column(
-
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 70,),
-            Container(
-              width: Get.width/1.2,
-              alignment: Alignment.center,
-              child: Lottie.asset('assets/lottie/loading_lottie.json'),
+          const SizedBox(height: 70),
+          Container(
+            width: Get.width / 1.2,
+            alignment: Alignment.center,
+            child: Lottie.asset('assets/lottie/loading_lottie.json'),
+          ),
+          Text(
+            "Loading...",
+            style: TextStyle(
+              color: AppConstant.appTextColor,
+              fontSize: 18.0,
+              fontWeight: FontWeight.w900,
             ),
-            Text("Loading...", style: TextStyle(
-                  color: AppConstant.appTextColor,
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w900)),
-            SizedBox(height: Get.height/3.5,),
+          ),
+          SizedBox(height: Get.height / 3.5),
           Container(
             width: Get.width,
             alignment: Alignment.center,
             child: Text(
               AppConstant.appPoweredBy,
               style: TextStyle(
-                  color: AppConstant.appTextColor,
-                  fontSize: 12.0,
-                  fontWeight: FontWeight.bold),
+                color: AppConstant.appTextColor,
+                fontSize: 12.0,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

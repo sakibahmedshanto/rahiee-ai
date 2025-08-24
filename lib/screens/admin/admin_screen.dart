@@ -3,17 +3,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../utils/app_constant.dart';
+import '../../controllers/admin_controller.dart';
 
-class AdminScreen extends StatefulWidget {
+class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
   @override
-  State<AdminScreen> createState() => _AdminScreenState();
-}
-
-class _AdminScreenState extends State<AdminScreen> {
-  @override
   Widget build(BuildContext context) {
+    final AdminController controller = Get.put(AdminController());
+    
     return Scaffold(
       backgroundColor: AppConstant.appBackgroundColor,
       appBar: AppBar(
@@ -29,9 +27,7 @@ class _AdminScreenState extends State<AdminScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            onPressed: () {
-              // TODO: Add logout functionality
-            },
+            onPressed: controller.onLogoutPressed,
             icon: Icon(
               Icons.logout,
               color: AppConstant.appTextColor,
@@ -40,14 +36,18 @@ class _AdminScreenState extends State<AdminScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Card
-              Container(
-                width: double.infinity,
+        child: Obx(() => controller.isLoading.value 
+          ? Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: controller.refreshDashboard,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Welcome Card
+                    Container(
+                      width: double.infinity,
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -128,21 +128,21 @@ class _AdminScreenState extends State<AdminScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildStatCard(
+                    child: Obx(() => _buildStatCard(
                       icon: Icons.people,
                       title: 'Total Users',
-                      value: '150',
+                      value: controller.totalUsers.value,
                       color: AppConstant.successColor,
-                    ),
+                    )),
                   ),
                   SizedBox(width: 12),
                   Expanded(
-                    child: _buildStatCard(
+                    child: Obx(() => _buildStatCard(
                       icon: Icons.access_time,
                       title: 'Active Today',
-                      value: '45',
+                      value: controller.activeToday.value,
                       color: AppConstant.infoColor,
-                    ),
+                    )),
                   ),
                 ],
               ),
@@ -152,21 +152,21 @@ class _AdminScreenState extends State<AdminScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildStatCard(
+                    child: Obx(() => _buildStatCard(
                       icon: Icons.warning,
                       title: 'Pending',
-                      value: '8',
+                      value: controller.pendingItems.value,
                       color: AppConstant.warningColor,
-                    ),
+                    )),
                   ),
                   SizedBox(width: 12),
                   Expanded(
-                    child: _buildStatCard(
+                    child: Obx(() => _buildStatCard(
                       icon: Icons.trending_up,
                       title: 'Reports',
-                      value: '23',
+                      value: controller.totalReports.value,
                       color: AppConstant.accentColor,
-                    ),
+                    )),
                   ),
                 ],
               ),
@@ -196,44 +196,32 @@ class _AdminScreenState extends State<AdminScreen> {
                   _buildActionCard(
                     icon: Icons.people_alt,
                     title: 'Manage Users',
-                    onTap: () {
-                      Get.snackbar('Coming Soon', 'User management feature will be available soon');
-                    },
+                    onTap: controller.onManageUsersPressed,
                   ),
                   _buildActionCard(
                     icon: Icons.assessment,
                     title: 'Reports',
-                    onTap: () {
-                      Get.snackbar('Coming Soon', 'Reports feature will be available soon');
-                    },
+                    onTap: controller.onReportsPressed,
                   ),
                   _buildActionCard(
                     icon: Icons.settings,
                     title: 'System Settings',
-                    onTap: () {
-                      Get.snackbar('Coming Soon', 'System settings feature will be available soon');
-                    },
+                    onTap: controller.onSystemSettingsPressed,
                   ),
                   _buildActionCard(
                     icon: Icons.security,
                     title: 'Security',
-                    onTap: () {
-                      Get.snackbar('Coming Soon', 'Security feature will be available soon');
-                    },
+                    onTap: controller.onSecurityPressed,
                   ),
                   _buildActionCard(
                     icon: Icons.backup,
                     title: 'Backup',
-                    onTap: () {
-                      Get.snackbar('Coming Soon', 'Backup feature will be available soon');
-                    },
+                    onTap: controller.onBackupPressed,
                   ),
                   _buildActionCard(
                     icon: Icons.analytics,
                     title: 'Analytics',
-                    onTap: () {
-                      Get.snackbar('Coming Soon', 'Analytics feature will be available soon');
-                    },
+                    onTap: controller.onAnalyticsPressed,
                   ),
                 ],
               ),
@@ -241,7 +229,8 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
         ),
       ),
-    );
+    ),
+    ));
   }
 
   Widget _buildStatCard({

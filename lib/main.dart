@@ -15,7 +15,6 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  // Initialize the theme controller
   Get.put(ThemeController());
   
   runApp(const MyApp());
