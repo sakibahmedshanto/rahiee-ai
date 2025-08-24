@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'firebase_options.dart';
-import 'screens/auth_ui/splash_screen.dart';
+import 'screens/auth_ui/splash_screen/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 import 'utils/app_constant.dart';
