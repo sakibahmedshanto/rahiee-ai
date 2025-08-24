@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> {
       var userData = await getUserDataController.getUserData(user!.uid);
       UserModel? userModel = await getUserDataController.getUserModel(user!.uid);
 
-      if (userData[0]['isAdmin'] == true) {
+      if (userData[0]['userRole'] == "admin") {
         Get.offAll(() => AdminScreen());
       } else {
         Get.offAll(() => LandingScreen(userModel: userModel!));

@@ -6,7 +6,6 @@ import 'firebase_options.dart';
 import 'screens/auth_ui/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
-
 import 'utils/app_constant.dart';
 
 
