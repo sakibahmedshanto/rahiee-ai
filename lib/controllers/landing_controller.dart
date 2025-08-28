@@ -10,23 +10,6 @@ class LandingController extends GetxController {
   void initializeWithUser(UserModel user) {
     userModel = user;
   }
-
-  void onAttendancePressed() {
-    Get.snackbar('Coming Soon', 'Attendance feature will be available soon');
-  }
-
-  void onSchedulePressed() {
-    Get.snackbar('Coming Soon', 'Schedule feature will be available soon');
-  }
-
-  void onProfilePressed() {
-    Get.snackbar('Coming Soon', 'Profile feature will be available soon');
-  }
-
-  void onSettingsPressed() {
-    Get.snackbar('Coming Soon', 'Settings feature will be available soon');
-  }
-
   void onLogoutPressed() {
     // TODO: Implement logout functionality
     Get.snackbar('Logout', 'Logout functionality will be implemented soon');

@@ -10,6 +10,7 @@ class ScheduleModel {
   final String createdByAdminId;
   final String assignedUserId;
   final String? actualUserId; // Who actually performed the task (for history tracking)
+  final String department; // Department categorization (Restaurant, Kitchen, Management, etc.)
   final String location;
   final double? latitude;
   final double? longitude;
@@ -34,6 +35,7 @@ class ScheduleModel {
     required this.createdByAdminId,
     required this.assignedUserId,
     this.actualUserId,
+    required this.department,
     required this.location,
     this.latitude,
     this.longitude,
@@ -60,6 +62,7 @@ class ScheduleModel {
       createdByAdminId: data['createdByAdminId'] ?? '',
       assignedUserId: data['assignedUserId'] ?? '',
       actualUserId: data['actualUserId'],
+      department: data['department'] ?? '',
       location: data['location'] ?? '',
       latitude: data['latitude']?.toDouble(),
       longitude: data['longitude']?.toDouble(),
@@ -89,6 +92,7 @@ class ScheduleModel {
       'createdByAdminId': createdByAdminId,
       'assignedUserId': assignedUserId,
       'actualUserId': actualUserId,
+      'department': department,
       'location': location,
       'latitude': latitude,
       'longitude': longitude,
@@ -112,6 +116,7 @@ class ScheduleModel {
     DateTime? endDateTime,
     String? assignedUserId,
     String? actualUserId,
+    String? department,
     String? location,
     double? latitude,
     double? longitude,
@@ -133,6 +138,7 @@ class ScheduleModel {
       createdByAdminId: createdByAdminId,
       assignedUserId: assignedUserId ?? this.assignedUserId,
       actualUserId: actualUserId ?? this.actualUserId,
+      department: department ?? this.department,
       location: location ?? this.location,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
