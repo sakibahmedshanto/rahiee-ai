@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import '../models/user_model.dart';
 import 'auth_controller/get_user_data_controller.dart';
-import '../screens/admin/admin_screen.dart';
 import '../screens/landing_screen/landing_screen.dart';
 import '../screens/auth_ui/welcome_screen.dart';
 
@@ -28,10 +27,21 @@ class SplashController extends GetxController {
   Future<void> _checkUserAuthentication() async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
+      print('DEBUG: Checking user authentication in splash');
+      print('DEBUG: Current user: ${user?.uid}');
+      print('DEBUG: Email verified: ${user?.emailVerified}');
       
       if (user != null) {
-        await _handleAuthenticatedUser(user);
+        print('DEBUG: User found, checking email verification');
+        if (user.emailVerified) {
+          print('DEBUG: Email verified, handling authenticated user');
+          await _handleAuthenticatedUser(user);
+        } else {
+          print('DEBUG: Email not verified, navigating to welcome');
+          _navigateToWelcome();
+        }
       } else {
+        print('DEBUG: No user found, navigating to welcome');
         _navigateToWelcome();
       }
     } catch (e) {
@@ -44,14 +54,22 @@ class SplashController extends GetxController {
 
   Future<void> _handleAuthenticatedUser(User user) async {
     try {
-      var userData = await getUserDataController.getUserData(user.uid);
+      print('DEBUG: Handling authenticated user: ${user.uid}');
       UserModel? userModel = await getUserDataController.getUserModel(user.uid);
-
-      if (userData.isNotEmpty && userData[0]['userRole'] == "admin") {
-        _navigateToAdmin();
-      } else if (userModel != null) {
-        _navigateToLanding(userModel);
+      
+      if (userModel != null) {
+        print('DEBUG: UserModel loaded: ${userModel.fullName}');
+        print('DEBUG: UserModel isAdmin: ${userModel.isAdmin}');
+        
+        if (userModel.isAdmin) {
+          print('DEBUG: Navigating to admin screen from splash');
+          _navigateToAdmin(userModel);
+        } else {
+          print('DEBUG: Navigating to landing screen');
+          _navigateToLanding(userModel);
+        }
       } else {
+        print('DEBUG: No user model found, navigating to welcome');
         _navigateToWelcome();
       }
     } catch (e) {
@@ -60,8 +78,8 @@ class SplashController extends GetxController {
     }
   }
 
-  void _navigateToAdmin() {
-    Get.offAll(() => const AdminScreen());
+  void _navigateToAdmin(UserModel userModel) {
+    Get.offAllNamed('/admin', arguments: userModel);
   }
 
   void _navigateToLanding(UserModel userModel) {

@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'firebase_options.dart';
 import 'screens/auth_ui/splash_screen/splash_screen.dart';
 import 'screens/schedule_screen/schedule_screen.dart';
+import 'screens/admin_screen/admin_screen.dart';
+import 'screens/auth_ui/sign_in_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 import 'utils/app_constant.dart';
@@ -36,6 +38,8 @@ class MyApp extends StatelessWidget {
       getPages: [
         GetPage(name: '/', page: () => const SplashScreen()),
         GetPage(name: '/schedule', page: () => const ScheduleScreen()),
+        GetPage(name: '/admin', page: () => const AdminScreen()),
+        GetPage(name: '/sign-in', page: () => const SignInScreen()),
       ],
     );
   }

@@ -10,7 +10,6 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 import '../../../controllers/auth_controller/get_user_data_controller.dart';
 import 'forget_password_screen.dart';
-import '../admin/admin_screen.dart';
 import '../landing_screen/landing_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -421,26 +420,46 @@ class _SignInScreenState extends State<SignInScreen>
             await getUserDataController.getUserData(userCredential.user!.uid);
 
         if (userCredential.user!.emailVerified) {
-          if (userData[0]['isAdmin'] == true) {
-            Get.snackbar(
-              "Success",
-              "Admin login successful!",
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: AppConstant.successColor,
-              colorText: Colors.white,
-              borderRadius: 15,
-              margin: EdgeInsets.all(15),
-            );
-            Get.offAll(() => AdminScreen());
+          // Get the complete user model first
+          UserModel? userModel = await getUserDataController
+              .getUserModel(userCredential.user!.uid);
+          
+          print('DEBUG: UserModel loaded: ${userModel?.fullName}');
+          print('DEBUG: UserModel isAdmin: ${userModel?.isAdmin}');
+          
+          if (userModel != null) {
+            // Check if user is admin using the proper UserModel method
+            if (userModel.isAdmin) {
+              print('DEBUG: Navigating to admin screen with UserModel');
+              Get.snackbar(
+                "Success",
+                "Admin login successful!",
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppConstant.successColor,
+                colorText: Colors.white,
+                borderRadius: 15,
+                margin: EdgeInsets.all(15),
+              );
+              // Pass the userModel to AdminScreen
+              Get.offAllNamed('/admin', arguments: userModel);
+            } else {
+              Get.offAll(() => LandingScreen(userModel: userModel));
+              Get.snackbar(
+                "Success",
+                "Login successful!",
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppConstant.successColor,
+                colorText: Colors.white,
+                borderRadius: 15,
+                margin: EdgeInsets.all(15),
+              );
+            }
           } else {
-            UserModel? userModel = await getUserDataController
-                .getUserModel(userCredential.user!.uid);
-            Get.offAll(() => LandingScreen(userModel: userModel!));
             Get.snackbar(
-              "Success",
-              "Login successful!",
+              "Error",
+              "Failed to load user data",
               snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: AppConstant.successColor,
+              backgroundColor: AppConstant.errorColor,
               colorText: Colors.white,
               borderRadius: 15,
               margin: EdgeInsets.all(15),

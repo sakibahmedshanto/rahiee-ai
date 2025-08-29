@@ -9,6 +9,12 @@ class LandingController extends GetxController {
 
   void initializeWithUser(UserModel user) {
     userModel = user;
+    
+    // Check if user is admin and redirect to admin screen
+    if (userModel.isAdmin) {
+      // Navigate to admin screen
+      Get.offNamed('/admin', arguments: userModel);
+    }
   }
   void onLogoutPressed() {
     // TODO: Implement logout functionality
@@ -56,5 +62,28 @@ class LandingController extends GetxController {
 
   String? get userImage {
     return userModel.userImg;
+  }
+
+  // Admin checking methods
+  bool get isAdmin => userModel.isAdmin;
+  bool get isCEO => userModel.isCEO;
+  bool get isManager => userModel.isManager;
+  bool get isEmployee => userModel.isEmployee;
+
+  // Navigation methods
+  void onAttendancePressed() {
+    Get.snackbar('Attendance', 'Attendance feature coming soon');
+  }
+
+  void onSchedulePressed() {
+    Get.snackbar('Schedule', 'Already on schedule screen');
+  }
+
+  void onProfilePressed() {
+    Get.snackbar('Profile', 'Profile feature coming soon');
+  }
+
+  void onSettingsPressed() {
+    Get.snackbar('Settings', 'Settings feature coming soon');
   }
 }
