@@ -1,4 +1,5 @@
 // ignore_for_file: file_names
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/schedule_model.dart';
@@ -32,10 +33,13 @@ class ScheduleController extends GetxController {
     try {
       isLoading.value = true;
       
-      // Firebase query to get schedules for the selected date
+      // Firebase query with composite index for optimal performance
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
       
+      print('DEBUG: Loading schedules for date: ${date.toIso8601String()}');
+      
+      // Optimized query using Firebase composite index
       final schedulesSnapshot = await FirebaseFirestore.instance
           .collection('schedules')
           .where('startDateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
@@ -43,24 +47,42 @@ class ScheduleController extends GetxController {
           .where('status', isEqualTo: 'active')
           .get();
       
+      print('DEBUG: Loaded ${schedulesSnapshot.docs.length} filtered schedules from Firestore');
+      
       final List<ScheduleModel> loadedSchedules = [];
       for (final doc in schedulesSnapshot.docs) {
         try {
           final schedule = ScheduleModel.fromFirestore(doc);
           loadedSchedules.add(schedule);
+          print('DEBUG: Added schedule: ${schedule.title}');
         } catch (e) {
           print('Error parsing schedule ${doc.id}: $e');
         }
       }
+      
+      print('DEBUG: Successfully loaded ${loadedSchedules.length} schedules for the selected date');
       
       schedules.value = loadedSchedules;
       _organizeSchedules();
       
     } catch (e) {
       print('Error loading schedules: $e');
+      
+      // If index is still building, show helpful message
+      if (e.toString().contains('failed-precondition') && e.toString().contains('index')) {
+        Get.snackbar(
+          'Index Building', 
+          'Firebase index is still being built. Please wait a few minutes and try again.',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          duration: Duration(seconds: 5),
+        );
+      } else {
+        Get.snackbar('Error', 'Failed to load schedules: $e');
+      }
+      
       schedules.value = [];
       _organizeSchedules();
-      Get.snackbar('Error', 'Failed to load schedules: $e');
     } finally {
       isLoading.value = false;
     }
