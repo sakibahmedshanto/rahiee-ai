@@ -1,5 +1,6 @@
 // ignore_for_file: file_names, unused_local_variable, unused_field, avoid_print
 
+import 'package:flutter/widgets.dart';
 import '../../screens/landing_screen/landing_screen.dart';
 import '../../models/user_model.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -62,7 +63,9 @@ class GoogleSignInController extends GetxController {
               
               if (userCreated) {
                 print('✅ User data successfully stored in Supabase database');
-                Get.offAll(() => LandingScreen(userModel: userModel));
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Get.offAll(() => LandingScreen(userModel: userModel));
+                });
                 return true;
               } else {
                 // Let UI handle error display
@@ -82,16 +85,22 @@ class GoogleSignInController extends GetxController {
                 
                 if (userUpdated) {
                   print('✅ User profile updated in Supabase database');
-                  Get.offAll(() => LandingScreen(userModel: updatedUser));
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Get.offAll(() => LandingScreen(userModel: updatedUser));
+                  });
                   return true;
                 } else {
                   print('⚠️ Failed to update user profile, proceeding anyway');
-                  Get.offAll(() => LandingScreen(userModel: existingUser));
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Get.offAll(() => LandingScreen(userModel: existingUser));
+                  });
                   return true;
                 }
               } else {
                 EasyLoading.dismiss();
-                Get.offAll(() => LandingScreen(userModel: existingUser));
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Get.offAll(() => LandingScreen(userModel: existingUser));
+                });
                 return true;
               }
             }

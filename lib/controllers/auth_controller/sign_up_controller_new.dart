@@ -24,7 +24,7 @@ class SignUpController extends GetxController {
     String userDeviceToken,
   ) async {
     try {
-      EasyLoading.show(status: "Please wait");
+      EasyLoading.show(status: "Creating account...");
       
       // Create user account in Supabase Auth
       final AuthResponse response = await _supabaseService.signUpWithEmail(
@@ -33,44 +33,133 @@ class SignUpController extends GetxController {
         data: {
           'full_name': userName,
           'phone': userPhone,
+          'city': userCity,
         },
       );
 
       if (response.user != null) {
-        // Create user profile in the users table
-        UserModel userModel = UserModel(
-          uId: response.user!.id,
-          employeeId: 'EMP-${response.user!.id.substring(0, 8).toUpperCase()}', // Generate employee ID
-          username: userName,
-          email: userEmail,
-          phone: userPhone,
-          fullName: userName, // Using username as fullName
-          department: 'General', // Default department
-          position: 'Employee', // Default position
-          userRole: 'employee', // Default role
-          userImg: '',
-          userDeviceToken: userDeviceToken,
-          isActive: true,
-          createdOn: DateTime.now(),
-        );
-
-        // Add user data to Supabase database
-        final success = await _getUserDataController.createUserModel(userModel);
+        // For email confirmation workflow, we'll create the user profile during sign-in
+        // This prevents issues with unconfirmed users having profiles
         
-        if (!success) {
-          Get.snackbar("Error", "Failed to create user profile");
-          return null;
+        EasyLoading.dismiss();
+        
+        // Show success message based on email confirmation status
+        if (response.user!.emailConfirmedAt == null) {
+          Get.snackbar(
+            "Success", 
+            "Account created! Please check your email to verify your account before signing in.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppConstant.appMainColor,
+            colorText: AppConstant.appTextColor,
+            duration: Duration(seconds: 5),
+          );
+        } else {
+          // If email is already confirmed (instant confirmation), create profile now
+          try {
+            UserModel userModel = UserModel(
+              uId: response.user!.id,
+              employeeId: 'EMP-${response.user!.id.substring(0, 8).toUpperCase()}',
+              username: userName,
+              email: userEmail,
+              phone: userPhone,
+              fullName: userName,
+              department: 'General',
+              position: 'Employee',
+              userRole: 'employee',
+              userImg: null,
+              userDeviceToken: userDeviceToken.isNotEmpty ? userDeviceToken : null,
+              isActive: true,
+              createdOn: DateTime.now(),
+              workLocation: userCity.isNotEmpty ? userCity : null,
+              biometricEnabled: false,
+              notificationsEnabled: true,
+              preferredLanguage: 'en',
+              leaveBalance: 30,
+              totalCoverageGiven: 0,
+              totalCoverageReceived: 0,
+              attendanceRate: 100.0,
+            );
+
+            final success = await _getUserDataController.createUserModel(userModel);
+            
+            if (success) {
+              Get.snackbar(
+                "Success", 
+                "Account created successfully! You can now sign in.",
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppConstant.appMainColor,
+                colorText: AppConstant.appTextColor,
+              );
+            } else {
+              print('Warning: User profile creation failed during signup, will be created during sign-in');
+              Get.snackbar(
+                "Success", 
+                "Account created! Your profile will be set up when you first sign in.",
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppConstant.appMainColor,
+                colorText: AppConstant.appTextColor,
+              );
+            }
+          } catch (e) {
+            print('Error creating user profile during signup: $e');
+            Get.snackbar(
+              "Success", 
+              "Account created! Your profile will be set up when you first sign in.",
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: AppConstant.appMainColor,
+              colorText: AppConstant.appTextColor,
+            );
+          }
         }
+      } else {
+        EasyLoading.dismiss();
+        Get.snackbar(
+          "Error", 
+          "Failed to create account. Please try again.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppConstant.appScendoryColor,
+          colorText: AppConstant.appTextColor,
+        );
+        return null;
       }
       
-      EasyLoading.dismiss();
       return response;
       
+    } on AuthException catch (authError) {
+      EasyLoading.dismiss();
+      String errorMessage = "Authentication failed";
+      
+      // Handle specific auth errors
+      switch (authError.message) {
+        case 'User already registered':
+          errorMessage = "An account with this email already exists";
+          break;
+        case 'Password should be at least 6 characters':
+          errorMessage = "Password must be at least 6 characters long";
+          break;
+        case 'Unable to validate email address: invalid format':
+          errorMessage = "Please enter a valid email address";
+          break;
+        case 'Signup is disabled':
+          errorMessage = "Account registration is currently disabled";
+          break;
+        default:
+          errorMessage = authError.message;
+      }
+      
+      Get.snackbar(
+        "Signup Error",
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppConstant.appScendoryColor,
+        colorText: AppConstant.appTextColor,
+      );
+      return null;
     } catch (e) {
       EasyLoading.dismiss();
       Get.snackbar(
         "Error",
-        "$e",
+        "An unexpected error occurred: ${e.toString()}",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppConstant.appScendoryColor,
         colorText: AppConstant.appTextColor,

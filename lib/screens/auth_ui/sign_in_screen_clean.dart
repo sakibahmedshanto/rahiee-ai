@@ -409,40 +409,93 @@ class _SignInScreenState extends State<SignInScreen>
       if (authResponse != null && authResponse.user != null) {
         // For Supabase, email verification status is in user.emailConfirmedAt
         if (authResponse.user!.emailConfirmedAt != null) {
-          // Get the complete user model
-          UserModel? userModel = await getUserDataController
-              .getUserModel(authResponse.user!.id);
-          
-          if (userModel != null) {
-            // Check if user is admin
-            if (userModel.isAdmin) {
-              Get.snackbar(
-                "Success",
-                "Admin login successful!",
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: AppConstant.successColor,
-                colorText: Colors.white,
-                borderRadius: 15,
-                margin: EdgeInsets.all(15),
+          try {
+            // Get the complete user model
+            UserModel? userModel = await getUserDataController
+                .getUserModel(authResponse.user!.id);
+            
+            // If user model doesn't exist, create it automatically
+            if (userModel == null) {
+              print('User profile not found, creating default profile...');
+              
+              // Create a default user profile from auth data
+              final authUser = authResponse.user!;
+              final defaultUserModel = UserModel(
+                uId: authUser.id,
+                employeeId: 'EMP-${authUser.id.substring(0, 8).toUpperCase()}',
+                username: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
+                email: authUser.email ?? email,
+                phone: authUser.userMetadata?['phone'] ?? '',
+                fullName: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
+                department: 'General',
+                position: 'Employee',
+                userRole: 'employee',
+                userImg: null,
+                userDeviceToken: null,
+                isActive: true,
+                createdOn: DateTime.now(),
+                workLocation: authUser.userMetadata?['city'],
+                biometricEnabled: false,
+                notificationsEnabled: true,
+                preferredLanguage: 'en',
+                leaveBalance: 30,
+                totalCoverageGiven: 0,
+                totalCoverageReceived: 0,
+                attendanceRate: 100.0,
               );
-              // Navigate to admin screen
-              Get.offAllNamed('/admin', arguments: userModel);
-            } else {
-              Get.snackbar(
-                "Success",
-                "Login successful!",
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: AppConstant.successColor,
-                colorText: Colors.white,
-                borderRadius: 15,
-                margin: EdgeInsets.all(15),
-              );
-              Get.offAll(() => LandingScreen(userModel: userModel));
+
+              // Try to create the user profile
+              final success = await getUserDataController.createUserModel(defaultUserModel);
+              
+              if (success) {
+                userModel = defaultUserModel;
+                print('Default user profile created successfully');
+              } else {
+                Get.snackbar(
+                  "Error",
+                  "Failed to create user profile. Please contact support.",
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: AppConstant.errorColor,
+                  colorText: Colors.white,
+                  borderRadius: 15,
+                  margin: EdgeInsets.all(15),
+                );
+                return;
+              }
             }
-          } else {
+            
+            if (userModel != null) {
+              // Check if user is admin
+              if (userModel.isAdmin) {
+                Get.snackbar(
+                  "Success",
+                  "Admin login successful!",
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: AppConstant.successColor,
+                  colorText: Colors.white,
+                  borderRadius: 15,
+                  margin: EdgeInsets.all(15),
+                );
+                // Navigate to admin screen
+                Get.offAllNamed('/admin', arguments: userModel);
+              } else {
+                Get.snackbar(
+                  "Success",
+                  "Login successful!",
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: AppConstant.successColor,
+                  colorText: Colors.white,
+                  borderRadius: 15,
+                  margin: EdgeInsets.all(15),
+                );
+                Get.offAll(() => LandingScreen(userModel: userModel!));
+              }
+            }
+          } catch (e) {
+            print('Error loading user profile: $e');
             Get.snackbar(
               "Error",
-              "Failed to load user data",
+              "Failed to load user profile: ${e.toString()}",
               snackPosition: SnackPosition.BOTTOM,
               backgroundColor: AppConstant.errorColor,
               colorText: Colors.white,

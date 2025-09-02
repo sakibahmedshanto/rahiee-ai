@@ -1,4 +1,5 @@
 // ignore_for_file: file_names, unused_field, body_might_complete_normally_nullable, unused_local_variable, non_constant_identifier_names, prefer_const_constructors
+import 'package:flutter/widgets.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import '../../screens/auth_ui/sign_in_screen.dart';
@@ -22,7 +23,9 @@ class ForgerPasswordController extends GetxController {
         colorText: AppConstant.appTextColor,
       );
       
-      Get.offAll(() => SignInScreen());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offAll(() => SignInScreen());
+      });
       EasyLoading.dismiss();
     } catch (e) {
       EasyLoading.dismiss();

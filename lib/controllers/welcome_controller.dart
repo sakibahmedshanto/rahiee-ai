@@ -88,20 +88,24 @@ class WelcomeController extends GetxController with GetTickerProviderStateMixin 
   void onGoogleSignInPressed() async {
     bool success = await googleSignInController.signInWithGoogle();
     if (!success) {
-      Get.snackbar(
-        'Error',
-        'Failed to sign in with Google. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppConstant.errorColor,
-        colorText: Colors.white,
-        borderRadius: 15,
-        margin: EdgeInsets.all(15),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.snackbar(
+          'Error',
+          'Failed to sign in with Google. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppConstant.errorColor,
+          colorText: Colors.white,
+          borderRadius: 15,
+          margin: EdgeInsets.all(15),
+        );
+      });
     }
   }
 
   void onGetStartedPressed() {
-    Get.to(() => const SignInScreen(), transition: Transition.rightToLeft);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.to(() => const SignInScreen(), transition: Transition.rightToLeft);
+    });
   }
 
   @override

@@ -48,13 +48,20 @@ class GetUserDataController extends GetxController {
   Future<bool> createUserModel(UserModel userModel) async {
     try {
       print('DEBUG: Creating user model for: ${userModel.fullName}');
+      print('DEBUG: User ID: ${userModel.uId}');
+      print('DEBUG: Employee ID: ${userModel.employeeId}');
+      print('DEBUG: Email: ${userModel.email}');
       
-      await _supabaseService.insert('my_users', userModel.toMap());
+      final userMap = userModel.toMap();
+      print('DEBUG: User data to insert: $userMap');
+      
+      await _supabaseService.insert('my_users', userMap);
       
       print('DEBUG: Successfully created user model');
       return true;
     } catch (e) {
-      print('Error creating user model: $e');
+      print('ERROR: Failed to create user model: $e');
+      print('ERROR: Stack trace: ${StackTrace.current}');
       return false;
     }
   }

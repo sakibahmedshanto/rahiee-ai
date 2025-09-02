@@ -23,11 +23,17 @@ class LandingScreen extends StatefulWidget {
 
 class _LandingScreenState extends State<LandingScreen> {
   final RxInt _selectedIndex = 0.obs;
+  late final LandingController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(LandingController());
+    controller.initializeWithUser(widget.userModel);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final LandingController controller = Get.put(LandingController());
-    controller.initializeWithUser(widget.userModel);
     
     return Scaffold(
       backgroundColor: AppConstant.backgroundColor,

@@ -17,8 +17,10 @@ class LandingController extends GetxController {
     
     // Check if user is admin and redirect to admin screen
     if (userModel.isAdmin) {
-      // Navigate to admin screen
-      Get.offNamed('/admin', arguments: userModel);
+      // Use addPostFrameCallback to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offNamed('/admin', arguments: userModel);
+      });
     }
   }
   Future<void> onLogoutPressed() async {
@@ -32,32 +34,37 @@ class LandingController extends GetxController {
       // Dismiss loading
       EasyLoading.dismiss();
       
-      // Show success message
-      Get.snackbar(
-        'Success',
-        'Logged out successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppConstant.successColor,
-        colorText: Colors.white,
-        borderRadius: 15,
-        margin: EdgeInsets.all(15),
-      );
-      
-      // Navigate to welcome screen and clear navigation stack
-      Get.offAllNamed('/welcome');
+      // Use addPostFrameCallback to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Show success message
+        Get.snackbar(
+          'Success',
+          'Logged out successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppConstant.successColor,
+          colorText: Colors.white,
+          borderRadius: 15,
+          margin: EdgeInsets.all(15),
+        );
+        
+        // Navigate to welcome screen and clear navigation stack
+        Get.offAllNamed('/welcome');
+      });
       
     } catch (e) {
       EasyLoading.dismiss();
       
-      Get.snackbar(
-        'Error',
-        'Failed to logout. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppConstant.errorColor,
-        colorText: Colors.white,
-        borderRadius: 15,
-        margin: EdgeInsets.all(15),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.snackbar(
+          'Error',
+          'Failed to logout. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppConstant.errorColor,
+          colorText: Colors.white,
+          borderRadius: 15,
+          margin: EdgeInsets.all(15),
+        );
+      });
       
       print('Logout error: $e');
     }

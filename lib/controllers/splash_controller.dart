@@ -1,6 +1,7 @@
 // ignore_for_file: file_names
 
 import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
@@ -81,15 +82,21 @@ class SplashController extends GetxController {
   }
 
   void _navigateToAdmin(UserModel userModel) {
-    Get.offAllNamed('/admin', arguments: userModel);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.offAllNamed('/admin', arguments: userModel);
+    });
   }
 
   void _navigateToLanding(UserModel userModel) {
-    Get.offAll(() => LandingScreen(userModel: userModel));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.offAll(() => LandingScreen(userModel: userModel));
+    });
   }
 
   void _navigateToWelcome() {
-    Get.offAll(() => const WelcomeScreen());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.offAll(() => const WelcomeScreen());
+    });
   }
 
   @override
