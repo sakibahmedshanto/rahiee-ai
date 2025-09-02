@@ -1,5 +1,4 @@
 // ignore_for_file: file_names
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserSummaryModel {
   final String summaryId;
@@ -96,103 +95,103 @@ class UserSummaryModel {
     this.version,
   });
 
-  // Factory constructor from Firestore
-  factory UserSummaryModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  // Factory constructor from Supabase JSON
+  factory UserSummaryModel.fromJson(Map<String, dynamic> data) {
     return UserSummaryModel(
-      summaryId: doc.id,
-      userId: data['userId'] ?? '',
-      periodStart: (data['periodStart'] as Timestamp).toDate(),
-      periodEnd: (data['periodEnd'] as Timestamp).toDate(),
-      periodType: data['periodType'] ?? 'daily',
-      totalScheduledHours: Duration(milliseconds: data['totalScheduledHours'] ?? 0),
-      totalWorkedHours: Duration(milliseconds: data['totalWorkedHours'] ?? 0),
-      totalApprovedHours: Duration(milliseconds: data['totalApprovedHours'] ?? 0),
-      totalPaidHours: Duration(milliseconds: data['totalPaidHours'] ?? 0),
-      totalSchedules: data['totalSchedules'] ?? 0,
-      completedSchedules: data['completedSchedules'] ?? 0,
-      pendingSchedules: data['pendingSchedules'] ?? 0,
-      unusualAttendances: data['unusualAttendances'] ?? 0,
-      appealedAttendances: data['appealedAttendances'] ?? 0,
-      attendanceRate: data['attendanceRate']?.toDouble() ?? 0.0,
-      approvalRate: data['approvalRate']?.toDouble() ?? 0.0,
-      punctualityScore: data['punctualityScore']?.toDouble() ?? 0.0,
-      consecutiveWorkDays: data['consecutiveWorkDays'] ?? 0,
-      totalAbsences: data['totalAbsences'] ?? 0,
-      totalEarnings: data['totalEarnings']?.toDouble() ?? 0.0,
-      pendingPayments: data['pendingPayments']?.toDouble() ?? 0.0,
-      hourlyRate: data['hourlyRate']?.toDouble() ?? 0.0,
+      summaryId: data['summary_id'] ?? '',
+      userId: data['user_id'] ?? '',
+      periodStart: DateTime.parse(data['period_start']),
+      periodEnd: DateTime.parse(data['period_end']),
+      periodType: data['period_type'] ?? 'daily',
+      totalScheduledHours: Duration(milliseconds: data['total_scheduled_hours'] ?? 0),
+      totalWorkedHours: Duration(milliseconds: data['total_worked_hours'] ?? 0),
+      totalApprovedHours: Duration(milliseconds: data['total_approved_hours'] ?? 0),
+      totalPaidHours: Duration(milliseconds: data['total_paid_hours'] ?? 0),
+      totalSchedules: data['total_schedules'] ?? 0,
+      completedSchedules: data['completed_schedules'] ?? 0,
+      pendingSchedules: data['pending_schedules'] ?? 0,
+      unusualAttendances: data['unusual_attendances'] ?? 0,
+      appealedAttendances: data['appealed_attendances'] ?? 0,
+      attendanceRate: data['attendance_rate']?.toDouble() ?? 0.0,
+      approvalRate: data['approval_rate']?.toDouble() ?? 0.0,
+      punctualityScore: data['punctuality_score']?.toDouble() ?? 0.0,
+      consecutiveWorkDays: data['consecutive_work_days'] ?? 0,
+      totalAbsences: data['total_absences'] ?? 0,
+      totalEarnings: data['total_earnings']?.toDouble() ?? 0.0,
+      pendingPayments: data['pending_payments']?.toDouble() ?? 0.0,
+      hourlyRate: data['hourly_rate']?.toDouble() ?? 0.0,
       bonuses: data['bonuses'] != null 
           ? Map<String, double>.from(data['bonuses'].map((k, v) => MapEntry(k, v.toDouble())))
           : null,
       deductions: data['deductions'] != null
           ? Map<String, double>.from(data['deductions'].map((k, v) => MapEntry(k, v.toDouble())))
           : null,
-      hoursBreakdown: data['hoursBreakdown'] != null
-          ? Map<String, Duration>.from(data['hoursBreakdown'].map((k, v) => MapEntry(k, Duration(milliseconds: v))))
+      hoursBreakdown: data['hours_breakdown'] != null
+          ? Map<String, Duration>.from(data['hours_breakdown'].map((k, v) => MapEntry(k, Duration(milliseconds: v))))
           : null,
-      statusBreakdown: data['statusBreakdown'] != null
-          ? Map<String, int>.from(data['statusBreakdown'])
+      statusBreakdown: data['status_breakdown'] != null
+          ? Map<String, int>.from(data['status_breakdown'])
           : null,
-      topPerformanceAreas: data['topPerformanceAreas'] != null
-          ? List<String>.from(data['topPerformanceAreas'])
+      topPerformanceAreas: data['top_performance_areas'] != null
+          ? List<String>.from(data['top_performance_areas'])
           : null,
-      improvementAreas: data['improvementAreas'] != null
-          ? List<String>.from(data['improvementAreas'])
+      improvementAreas: data['improvement_areas'] != null
+          ? List<String>.from(data['improvement_areas'])
           : null,
-      performanceTrends: data['performanceTrends'],
-      previousPeriodComparison: data['previousPeriodComparison']?.toDouble(),
+      performanceTrends: data['performance_trends'],
+      previousPeriodComparison: data['previous_period_comparison']?.toDouble(),
       insights: data['insights'],
-      lastUpdated: (data['lastUpdated'] as Timestamp).toDate(),
-      updatedBySystem: data['updatedBySystem'] ?? 'auto_function',
-      isFinalized: data['isFinalized'] ?? false,
-      finalizedByAdminId: data['finalizedByAdminId'],
-      finalizedAt: data['finalizedAt'] != null
-          ? (data['finalizedAt'] as Timestamp).toDate()
+      lastUpdated: DateTime.parse(data['last_updated']),
+      updatedBySystem: data['updated_by_system'] ?? 'auto_function',
+      isFinalized: data['is_finalized'] ?? false,
+      finalizedByAdminId: data['finalized_by_admin_id'],
+      finalizedAt: data['finalized_at'] != null
+          ? DateTime.parse(data['finalized_at'])
           : null,
       metadata: data['metadata'],
       version: data['version'],
     );
   }
 
-  // Convert to Firestore document
-  Map<String, dynamic> toFirestore() {
+  // Convert to Supabase JSON
+  Map<String, dynamic> toJson() {
     return {
-      'userId': userId,
-      'periodStart': Timestamp.fromDate(periodStart),
-      'periodEnd': Timestamp.fromDate(periodEnd),
-      'periodType': periodType,
-      'totalScheduledHours': totalScheduledHours.inMilliseconds,
-      'totalWorkedHours': totalWorkedHours.inMilliseconds,
-      'totalApprovedHours': totalApprovedHours.inMilliseconds,
-      'totalPaidHours': totalPaidHours.inMilliseconds,
-      'totalSchedules': totalSchedules,
-      'completedSchedules': completedSchedules,
-      'pendingSchedules': pendingSchedules,
-      'unusualAttendances': unusualAttendances,
-      'appealedAttendances': appealedAttendances,
-      'attendanceRate': attendanceRate,
-      'approvalRate': approvalRate,
-      'punctualityScore': punctualityScore,
-      'consecutiveWorkDays': consecutiveWorkDays,
-      'totalAbsences': totalAbsences,
-      'totalEarnings': totalEarnings,
-      'pendingPayments': pendingPayments,
-      'hourlyRate': hourlyRate,
+      'summary_id': summaryId,
+      'user_id': userId,
+      'period_start': periodStart.toIso8601String(),
+      'period_end': periodEnd.toIso8601String(),
+      'period_type': periodType,
+      'total_scheduled_hours': totalScheduledHours.inMilliseconds,
+      'total_worked_hours': totalWorkedHours.inMilliseconds,
+      'total_approved_hours': totalApprovedHours.inMilliseconds,
+      'total_paid_hours': totalPaidHours.inMilliseconds,
+      'total_schedules': totalSchedules,
+      'completed_schedules': completedSchedules,
+      'pending_schedules': pendingSchedules,
+      'unusual_attendances': unusualAttendances,
+      'appealed_attendances': appealedAttendances,
+      'attendance_rate': attendanceRate,
+      'approval_rate': approvalRate,
+      'punctuality_score': punctualityScore,
+      'consecutive_work_days': consecutiveWorkDays,
+      'total_absences': totalAbsences,
+      'total_earnings': totalEarnings,
+      'pending_payments': pendingPayments,
+      'hourly_rate': hourlyRate,
       'bonuses': bonuses,
       'deductions': deductions,
-      'hoursBreakdown': hoursBreakdown?.map((k, v) => MapEntry(k, v.inMilliseconds)),
-      'statusBreakdown': statusBreakdown,
-      'topPerformanceAreas': topPerformanceAreas,
-      'improvementAreas': improvementAreas,
-      'performanceTrends': performanceTrends,
-      'previousPeriodComparison': previousPeriodComparison,
+      'hours_breakdown': hoursBreakdown?.map((k, v) => MapEntry(k, v.inMilliseconds)),
+      'status_breakdown': statusBreakdown,
+      'top_performance_areas': topPerformanceAreas,
+      'improvement_areas': improvementAreas,
+      'performance_trends': performanceTrends,
+      'previous_period_comparison': previousPeriodComparison,
       'insights': insights,
-      'lastUpdated': Timestamp.fromDate(lastUpdated),
-      'updatedBySystem': updatedBySystem,
-      'isFinalized': isFinalized,
-      'finalizedByAdminId': finalizedByAdminId,
-      'finalizedAt': finalizedAt != null ? Timestamp.fromDate(finalizedAt!) : null,
+      'last_updated': lastUpdated.toIso8601String(),
+      'updated_by_system': updatedBySystem,
+      'is_finalized': isFinalized,
+      'finalized_by_admin_id': finalizedByAdminId,
+      'finalized_at': finalizedAt?.toIso8601String(),
       'metadata': metadata,
       'version': version,
     };

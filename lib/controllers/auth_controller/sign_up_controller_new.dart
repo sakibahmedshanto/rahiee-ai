@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/user_model.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/app_constant.dart';
 import 'get_user_data_controller.dart';
 
 class SignUpController extends GetxController {
@@ -57,9 +58,7 @@ class SignUpController extends GetxController {
         final success = await _getUserDataController.createUserModel(userModel);
         
         if (!success) {
-          EasyLoading.dismiss();
-          // Let UI handle error display
-          print("Failed to create user profile"); // Log for debugging
+          Get.snackbar("Error", "Failed to create user profile");
           return null;
         }
       }
@@ -69,8 +68,13 @@ class SignUpController extends GetxController {
       
     } catch (e) {
       EasyLoading.dismiss();
-      // Remove duplicate error message - let UI handle error display
-      print("Sign up error: $e"); // Log for debugging
+      Get.snackbar(
+        "Error",
+        "$e",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppConstant.appScendoryColor,
+        colorText: AppConstant.appTextColor,
+      );
       return null;
     }
   }

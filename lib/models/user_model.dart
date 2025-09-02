@@ -13,8 +13,7 @@ class UserModel {
   final String position;
   final String userRole; // 'employee', 'admin', 'ceo', 'manager'
   final bool isActive;
-  final dynamic createdOn;
-  final dynamic lastLogin; // Optional last login timestamp
+  final DateTime? createdOn;
   
   // Attendance-specific fields
   final String? workLocation; // Optional work location/office
@@ -46,10 +45,9 @@ class UserModel {
     required this.position,
     required this.userRole,
     required this.isActive,
-    required this.createdOn,
+    this.createdOn,
     this.userImg,
     this.userDeviceToken,
-    this.lastLogin,
     this.workLocation,
     this.shiftType,
     this.supervisorId,
@@ -65,69 +63,67 @@ class UserModel {
     this.leaveBalance,
   });
 
-  // Serialize the UserModel instance to a JSON map
+  // Serialize the UserModel instance to a JSON map for Supabase
   Map<String, dynamic> toMap() {
     return {
-      'uId': uId,
-      'employeeId': employeeId,
+      'id': uId, // Supabase uses 'id' as primary key
+      'employee_id': employeeId,
       'username': username,
       'email': email,
       'phone': phone,
-      'userImg': userImg,
-      'userDeviceToken': userDeviceToken,
-      'fullName': fullName,
+      'user_img': userImg,
+      'user_device_token': userDeviceToken,
+      'full_name': fullName,
       'department': department,
       'position': position,
-      'userRole': userRole,
-      'isActive': isActive,
-      'createdOn': createdOn,
-      'lastLogin': lastLogin,
-      'workLocation': workLocation,
-      'shiftType': shiftType,
-      'supervisorId': supervisorId,
-      'salaryRate': salaryRate,
-      'emergencyContact': emergencyContact,
-      'emergencyPhone': emergencyPhone,
-      'biometricEnabled': biometricEnabled,
-      'preferredLanguage': preferredLanguage,
-      'notificationsEnabled': notificationsEnabled,
-      'totalCoverageGiven': totalCoverageGiven,
-      'totalCoverageReceived': totalCoverageReceived,
-      'attendanceRate': attendanceRate,
-      'leaveBalance': leaveBalance,
+      'user_role': userRole,
+      'is_active': isActive,
+      'created_on': createdOn?.toIso8601String(),
+      'work_location': workLocation,
+      'shift_type': shiftType,
+      'supervisor_id': supervisorId,
+      'salary_rate': salaryRate,
+      'emergency_contact': emergencyContact,
+      'emergency_phone': emergencyPhone,
+      'biometric_enabled': biometricEnabled,
+      'preferred_language': preferredLanguage,
+      'notifications_enabled': notificationsEnabled,
+      'total_coverage_given': totalCoverageGiven,
+      'total_coverage_received': totalCoverageReceived,
+      'attendance_rate': attendanceRate,
+      'leave_balance': leaveBalance,
     };
   }
 
-  // Create a UserModel instance from a JSON map
+  // Create a UserModel instance from a Supabase JSON map
   factory UserModel.fromMap(Map<String, dynamic> json) {
     return UserModel(
-      uId: json['uId'] ?? '',
-      employeeId: json['employeeId'] ?? '',
-      username: json['username'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
-      fullName: json['fullName'] ?? '',
-      department: json['department'] ?? '',
-      position: json['position'] ?? '',
-      userRole: json['userRole'] ?? 'employee',
-      isActive: json['isActive'] ?? true,
-      createdOn: json['createdOn'],
-      userImg: json['userImg'],
-      userDeviceToken: json['userDeviceToken'],
-      lastLogin: json['lastLogin'],
-      workLocation: json['workLocation'],
-      shiftType: json['shiftType'],
-      supervisorId: json['supervisorId'],
-      salaryRate: json['salaryRate']?.toDouble(),
-      emergencyContact: json['emergencyContact'],
-      emergencyPhone: json['emergencyPhone'],
-      biometricEnabled: json['biometricEnabled'],
-      preferredLanguage: json['preferredLanguage'],
-      notificationsEnabled: json['notificationsEnabled'],
-      totalCoverageGiven: json['totalCoverageGiven']?.toInt(),
-      totalCoverageReceived: json['totalCoverageReceived']?.toInt(),
-      attendanceRate: json['attendanceRate']?.toDouble(),
-      leaveBalance: json['leaveBalance']?.toInt(),
+      uId: json['id']?.toString() ?? '',
+      employeeId: json['employee_id']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
+      department: json['department']?.toString() ?? '',
+      position: json['position']?.toString() ?? '',
+      userRole: json['user_role']?.toString() ?? 'employee',
+      isActive: json['is_active'] as bool? ?? true,
+      createdOn: json['created_on'] != null ? DateTime.parse(json['created_on']) : null,
+      userImg: json['user_img']?.toString(),
+      userDeviceToken: json['user_device_token']?.toString(),
+      workLocation: json['work_location']?.toString(),
+      shiftType: json['shift_type']?.toString(),
+      supervisorId: json['supervisor_id']?.toString(),
+      salaryRate: json['salary_rate']?.toDouble(),
+      emergencyContact: json['emergency_contact']?.toString(),
+      emergencyPhone: json['emergency_phone']?.toString(),
+      biometricEnabled: json['biometric_enabled'] as bool?,
+      preferredLanguage: json['preferred_language']?.toString(),
+      notificationsEnabled: json['notifications_enabled'] as bool?,
+      totalCoverageGiven: json['total_coverage_given'] as int?,
+      totalCoverageReceived: json['total_coverage_received'] as int?,
+      attendanceRate: json['attendance_rate']?.toDouble(),
+      leaveBalance: json['leave_balance'] as int?,
     );
   }
 
@@ -151,8 +147,7 @@ class UserModel {
     String? position,
     String? userRole,
     bool? isActive,
-    dynamic createdOn,
-    dynamic lastLogin,
+    DateTime? createdOn,
     String? workLocation,
     String? shiftType,
     String? supervisorId,
@@ -181,7 +176,6 @@ class UserModel {
       userRole: userRole ?? this.userRole,
       isActive: isActive ?? this.isActive,
       createdOn: createdOn ?? this.createdOn,
-      lastLogin: lastLogin ?? this.lastLogin,
       workLocation: workLocation ?? this.workLocation,
       shiftType: shiftType ?? this.shiftType,
       supervisorId: supervisorId ?? this.supervisorId,

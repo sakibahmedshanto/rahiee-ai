@@ -1,8 +1,8 @@
 // ignore_for_file: file_names
 import 'package:get/get.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/schedule_model.dart';
 import '../models/user_model.dart';
+import '../services/supabase_service.dart';
 
 class ScheduleController extends GetxController {
   // Observable variables
@@ -13,6 +13,8 @@ class ScheduleController extends GetxController {
   final schedulesByRole = <String, List<ScheduleDisplayModel>>{}.obs;
   final schedulesByDepartment = <String, List<ScheduleDisplayModel>>{}.obs;
   final currentView = 'role'.obs; // 'role' or 'department'
+
+  final SupabaseService _supabaseService = SupabaseService.to;
 
   @override
   void onInit() {
@@ -32,24 +34,29 @@ class ScheduleController extends GetxController {
     try {
       isLoading.value = true;
       
-      // Firebase query to get schedules for the selected date
+      // Supabase query to get schedules for the selected date
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
       
-      final schedulesSnapshot = await FirebaseFirestore.instance
-          .collection('schedules')
-          .where('startDateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('startDateTime', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-          .where('status', isEqualTo: 'active')
-          .get();
+      final response = await _supabaseService.select(
+        'employee_schedules',
+        gte: 'start_date_time',
+        gteValue: startOfDay.toIso8601String(),
+        lte: 'start_date_time', 
+        lteValue: endOfDay.toIso8601String(),
+        eq: 'status',
+        eqValue: 'active',
+        orderBy: 'start_date_time',
+        ascending: true,
+      );
       
       final List<ScheduleModel> loadedSchedules = [];
-      for (final doc in schedulesSnapshot.docs) {
+      for (final data in response) {
         try {
-          final schedule = ScheduleModel.fromFirestore(doc);
+          final schedule = ScheduleModel.fromMap(data);
           loadedSchedules.add(schedule);
         } catch (e) {
-          print('Error parsing schedule ${doc.id}: $e');
+          print('Error parsing schedule ${data['id']}: $e');
         }
       }
       
@@ -69,19 +76,22 @@ class ScheduleController extends GetxController {
   // Load users data
   Future<void> loadUsers() async {
     try {
-      // Firebase query to get all active users
-      final usersSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('isActive', isEqualTo: true)
-          .get();
+      // Supabase query to get all active users
+      final response = await _supabaseService.select(
+        'my_users',
+        eq: 'is_active',
+        eqValue: true,
+        orderBy: 'full_name',
+        ascending: true,
+      );
       
       final List<UserModel> loadedUsers = [];
-      for (final doc in usersSnapshot.docs) {
+      for (final data in response) {
         try {
-          final user = UserModel.fromMap(doc.data());
+          final user = UserModel.fromMap(data);
           loadedUsers.add(user);
         } catch (e) {
-          print('Error parsing user ${doc.id}: $e');
+          print('Error parsing user ${data['id']}: $e');
         }
       }
       

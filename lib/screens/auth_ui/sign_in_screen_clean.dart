@@ -316,13 +316,13 @@ class _SignInScreenState extends State<SignInScreen>
         controller: userPassword,
         obscureText: !signInController.isPasswordVisible.value,
         style: TextStyle(
-          color: const Color.fromARGB(255, 0, 0, 0),
+          color: AppConstant.appTextColor,
           fontSize: 16,
         ),
         decoration: InputDecoration(
           labelText: 'Password',
           labelStyle: TextStyle(
-            color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.6),
+            color: AppConstant.appTextColor.withOpacity(0.6),
           ),
           prefixIcon: Icon(
             Icons.lock_outline,
@@ -409,52 +409,40 @@ class _SignInScreenState extends State<SignInScreen>
       if (authResponse != null && authResponse.user != null) {
         // For Supabase, email verification status is in user.emailConfirmedAt
         if (authResponse.user!.emailConfirmedAt != null) {
-          try {
-            // Get the complete user model
-            UserModel? userModel = await getUserDataController
-                .getUserModel(authResponse.user!.id);
-            
-            if (userModel != null) {
-              // Check if user is admin
-              if (userModel.isAdmin) {
-                Get.snackbar(
-                  "Success",
-                  "Admin login successful!",
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppConstant.successColor,
-                  colorText: Colors.white,
-                  borderRadius: 15,
-                  margin: EdgeInsets.all(15),
-                );
-                // Navigate to admin screen
-                Get.offAllNamed('/admin', arguments: userModel);
-              } else {
-                Get.snackbar(
-                  "Success",
-                  "Login successful!",
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppConstant.successColor,
-                  colorText: Colors.white,
-                  borderRadius: 15,
-                  margin: EdgeInsets.all(15),
-                );
-                Get.offAll(() => LandingScreen(userModel: userModel));
-              }
-            } else {
+          // Get the complete user model
+          UserModel? userModel = await getUserDataController
+              .getUserModel(authResponse.user!.id);
+          
+          if (userModel != null) {
+            // Check if user is admin
+            if (userModel.isAdmin) {
               Get.snackbar(
-                "Error",
-                "Failed to load user data",
+                "Success",
+                "Admin login successful!",
                 snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: AppConstant.errorColor,
+                backgroundColor: AppConstant.successColor,
                 colorText: Colors.white,
                 borderRadius: 15,
                 margin: EdgeInsets.all(15),
               );
+              // Navigate to admin screen
+              Get.offAllNamed('/admin', arguments: userModel);
+            } else {
+              Get.snackbar(
+                "Success",
+                "Login successful!",
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppConstant.successColor,
+                colorText: Colors.white,
+                borderRadius: 15,
+                margin: EdgeInsets.all(15),
+              );
+              Get.offAll(() => LandingScreen(userModel: userModel));
             }
-          } catch (e) {
+          } else {
             Get.snackbar(
               "Error",
-              "Failed to load user profile",
+              "Failed to load user data",
               snackPosition: SnackPosition.BOTTOM,
               backgroundColor: AppConstant.errorColor,
               colorText: Colors.white,

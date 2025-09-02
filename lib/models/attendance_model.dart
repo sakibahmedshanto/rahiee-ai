@@ -1,5 +1,4 @@
 // ignore_for_file: file_names
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AttendanceModel {
   final String attendanceId;
@@ -90,105 +89,101 @@ class AttendanceModel {
     this.appVersion,
   });
 
-  // Factory constructor from Firestore
-  factory AttendanceModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  // Factory constructor from Supabase JSON
+  factory AttendanceModel.fromJson(Map<String, dynamic> data) {
     return AttendanceModel(
-      attendanceId: doc.id,
-      userId: data['userId'] ?? '',
-      scheduleId: data['scheduleId'] ?? '',
-      checkInTime: (data['checkInTime'] as Timestamp).toDate(),
-      checkOutTime: data['checkOutTime'] != null 
-          ? (data['checkOutTime'] as Timestamp).toDate() 
+      attendanceId: data['attendance_id'] ?? '',
+      userId: data['user_id'] ?? '',
+      scheduleId: data['schedule_id'] ?? '',
+      checkInTime: DateTime.parse(data['check_in_time']),
+      checkOutTime: data['check_out_time'] != null 
+          ? DateTime.parse(data['check_out_time'])
           : null,
       status: data['status'] ?? 'pending_checkout',
-      totalWorkingHours: data['totalWorkingHours'] != null
-          ? Duration(milliseconds: data['totalWorkingHours'])
+      totalWorkingHours: data['total_working_hours'] != null
+          ? Duration(milliseconds: data['total_working_hours'])
           : null,
-      checkInPhotoUrl: data['checkInPhotoUrl'],
-      checkInLatitude: data['checkInLatitude']?.toDouble(),
-      checkInLongitude: data['checkInLongitude']?.toDouble(),
-      checkInAddress: data['checkInAddress'],
-      mlCheckInResults: data['mlCheckInResults'],
-      uniformDetected: data['uniformDetected'] ?? false,
-      uniformConfidence: data['uniformConfidence']?.toDouble(),
-      checkOutPhotoUrl: data['checkOutPhotoUrl'],
-      checkOutLatitude: data['checkOutLatitude']?.toDouble(),
-      checkOutLongitude: data['checkOutLongitude']?.toDouble(),
-      checkOutAddress: data['checkOutAddress'],
-      mlCheckOutResults: data['mlCheckOutResults'],
-      isUnusual: data['isUnusual'] ?? false,
-      unusualReason: data['unusualReason'],
-      unusualFlags: data['unusualFlags'] != null 
-          ? List<String>.from(data['unusualFlags']) 
+      checkInPhotoUrl: data['check_in_photo_url'],
+      checkInLatitude: data['check_in_latitude']?.toDouble(),
+      checkInLongitude: data['check_in_longitude']?.toDouble(),
+      checkInAddress: data['check_in_address'],
+      mlCheckInResults: data['ml_check_in_results'],
+      uniformDetected: data['uniform_detected'] ?? false,
+      uniformConfidence: data['uniform_confidence']?.toDouble(),
+      checkOutPhotoUrl: data['check_out_photo_url'],
+      checkOutLatitude: data['check_out_latitude']?.toDouble(),
+      checkOutLongitude: data['check_out_longitude']?.toDouble(),
+      checkOutAddress: data['check_out_address'],
+      mlCheckOutResults: data['ml_check_out_results'],
+      isUnusual: data['is_unusual'] ?? false,
+      unusualReason: data['unusual_reason'],
+      unusualFlags: data['unusual_flags'] != null 
+          ? List<String>.from(data['unusual_flags']) 
           : null,
-      hasAppeal: data['hasAppeal'] ?? false,
-      appealDetails: data['appealDetails'] != null
-          ? AppealDetails.fromMap(data['appealDetails'])
+      hasAppeal: data['has_appeal'] ?? false,
+      appealDetails: data['appeal_details'] != null
+          ? AppealDetails.fromMap(data['appeal_details'])
           : null,
-      isApprovedForPayment: data['isApprovedForPayment'] ?? false,
-      approvedByAdminId: data['approvedByAdminId'],
-      approvalDateTime: data['approvalDateTime'] != null
-          ? (data['approvalDateTime'] as Timestamp).toDate()
+      isApprovedForPayment: data['is_approved_for_payment'] ?? false,
+      approvedByAdminId: data['approved_by_admin_id'],
+      approvalDateTime: data['approval_date_time'] != null
+          ? DateTime.parse(data['approval_date_time'])
           : null,
-      adminNotes: data['adminNotes'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      adminNotes: data['admin_notes'],
+      createdAt: DateTime.parse(data['created_at']),
+      updatedAt: DateTime.parse(data['updated_at']),
       breaks: data['breaks'] != null
           ? (data['breaks'] as List)
               .map((e) => BreakRecord.fromMap(e))
               .toList()
           : null,
-      totalBreakTime: data['totalBreakTime'] != null
-          ? Duration(milliseconds: data['totalBreakTime'])
+      totalBreakTime: data['total_break_time'] != null
+          ? Duration(milliseconds: data['total_break_time'])
           : null,
       metadata: data['metadata'],
-      deviceInfo: data['deviceInfo'],
-      appVersion: data['appVersion'],
+      deviceInfo: data['device_info'],
+      appVersion: data['app_version'],
     );
   }
 
-  // Convert to Firestore document
-  Map<String, dynamic> toFirestore() {
+  // Convert to Supabase JSON
+  Map<String, dynamic> toJson() {
     return {
-      'userId': userId,
-      'scheduleId': scheduleId,
-      'checkInTime': Timestamp.fromDate(checkInTime),
-      'checkOutTime': checkOutTime != null 
-          ? Timestamp.fromDate(checkOutTime!) 
-          : null,
+      'attendance_id': attendanceId,
+      'user_id': userId,
+      'schedule_id': scheduleId,
+      'check_in_time': checkInTime.toIso8601String(),
+      'check_out_time': checkOutTime?.toIso8601String(),
       'status': status,
-      'totalWorkingHours': totalWorkingHours?.inMilliseconds,
-      'checkInPhotoUrl': checkInPhotoUrl,
-      'checkInLatitude': checkInLatitude,
-      'checkInLongitude': checkInLongitude,
-      'checkInAddress': checkInAddress,
-      'mlCheckInResults': mlCheckInResults,
-      'uniformDetected': uniformDetected,
-      'uniformConfidence': uniformConfidence,
-      'checkOutPhotoUrl': checkOutPhotoUrl,
-      'checkOutLatitude': checkOutLatitude,
-      'checkOutLongitude': checkOutLongitude,
-      'checkOutAddress': checkOutAddress,
-      'mlCheckOutResults': mlCheckOutResults,
-      'isUnusual': isUnusual,
-      'unusualReason': unusualReason,
-      'unusualFlags': unusualFlags,
-      'hasAppeal': hasAppeal,
-      'appealDetails': appealDetails?.toMap(),
-      'isApprovedForPayment': isApprovedForPayment,
-      'approvedByAdminId': approvedByAdminId,
-      'approvalDateTime': approvalDateTime != null
-          ? Timestamp.fromDate(approvalDateTime!)
-          : null,
-      'adminNotes': adminNotes,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
+      'total_working_hours': totalWorkingHours?.inMilliseconds,
+      'check_in_photo_url': checkInPhotoUrl,
+      'check_in_latitude': checkInLatitude,
+      'check_in_longitude': checkInLongitude,
+      'check_in_address': checkInAddress,
+      'ml_check_in_results': mlCheckInResults,
+      'uniform_detected': uniformDetected,
+      'uniform_confidence': uniformConfidence,
+      'check_out_photo_url': checkOutPhotoUrl,
+      'check_out_latitude': checkOutLatitude,
+      'check_out_longitude': checkOutLongitude,
+      'check_out_address': checkOutAddress,
+      'ml_check_out_results': mlCheckOutResults,
+      'is_unusual': isUnusual,
+      'unusual_reason': unusualReason,
+      'unusual_flags': unusualFlags,
+      'has_appeal': hasAppeal,
+      'appeal_details': appealDetails?.toMap(),
+      'is_approved_for_payment': isApprovedForPayment,
+      'approved_by_admin_id': approvedByAdminId,
+      'approval_date_time': approvalDateTime?.toIso8601String(),
+      'admin_notes': adminNotes,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
       'breaks': breaks?.map((e) => e.toMap()).toList(),
-      'totalBreakTime': totalBreakTime?.inMilliseconds,
+      'total_break_time': totalBreakTime?.inMilliseconds,
       'metadata': metadata,
-      'deviceInfo': deviceInfo,
-      'appVersion': appVersion,
+      'device_info': deviceInfo,
+      'app_version': appVersion,
     };
   }
 
@@ -288,35 +283,33 @@ class AppealDetails {
 
   factory AppealDetails.fromMap(Map<String, dynamic> map) {
     return AppealDetails(
-      appealId: map['appealId'] ?? '',
+      appealId: map['appeal_id'] ?? '',
       reason: map['reason'] ?? '',
       description: map['description'] ?? '',
-      appealDateTime: (map['appealDateTime'] as Timestamp).toDate(),
-      appealStatus: map['appealStatus'] ?? 'pending',
-      reviewedByAdminId: map['reviewedByAdminId'],
-      reviewedAt: map['reviewedAt'] != null
-          ? (map['reviewedAt'] as Timestamp).toDate()
+      appealDateTime: DateTime.parse(map['appeal_date_time']),
+      appealStatus: map['appeal_status'] ?? 'pending',
+      reviewedByAdminId: map['reviewed_by_admin_id'],
+      reviewedAt: map['reviewed_at'] != null
+          ? DateTime.parse(map['reviewed_at'])
           : null,
-      adminResponse: map['adminResponse'],
-      supportingDocuments: map['supportingDocuments'] != null
-          ? List<String>.from(map['supportingDocuments'])
+      adminResponse: map['admin_response'],
+      supportingDocuments: map['supporting_documents'] != null
+          ? List<String>.from(map['supporting_documents'])
           : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'appealId': appealId,
+      'appeal_id': appealId,
       'reason': reason,
       'description': description,
-      'appealDateTime': Timestamp.fromDate(appealDateTime),
-      'appealStatus': appealStatus,
-      'reviewedByAdminId': reviewedByAdminId,
-      'reviewedAt': reviewedAt != null 
-          ? Timestamp.fromDate(reviewedAt!) 
-          : null,
-      'adminResponse': adminResponse,
-      'supportingDocuments': supportingDocuments,
+      'appeal_date_time': appealDateTime.toIso8601String(),
+      'appeal_status': appealStatus,
+      'reviewed_by_admin_id': reviewedByAdminId,
+      'reviewed_at': reviewedAt?.toIso8601String(),
+      'admin_response': adminResponse,
+      'supporting_documents': supportingDocuments,
     };
   }
 }
@@ -339,10 +332,10 @@ class BreakRecord {
 
   factory BreakRecord.fromMap(Map<String, dynamic> map) {
     return BreakRecord(
-      breakId: map['breakId'] ?? '',
-      startTime: (map['startTime'] as Timestamp).toDate(),
-      endTime: map['endTime'] != null
-          ? (map['endTime'] as Timestamp).toDate()
+      breakId: map['break_id'] ?? '',
+      startTime: DateTime.parse(map['start_time']),
+      endTime: map['end_time'] != null
+          ? DateTime.parse(map['end_time'])
           : null,
       type: map['type'] ?? '',
       reason: map['reason'],
@@ -351,9 +344,9 @@ class BreakRecord {
 
   Map<String, dynamic> toMap() {
     return {
-      'breakId': breakId,
-      'startTime': Timestamp.fromDate(startTime),
-      'endTime': endTime != null ? Timestamp.fromDate(endTime!) : null,
+      'break_id': breakId,
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime?.toIso8601String(),
       'type': type,
       'reason': reason,
     };

@@ -1,9 +1,11 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'firebase_options.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'services/supabase_service.dart';
+import 'services/schedule_service.dart';
 import 'screens/auth_ui/splash_screen/splash_screen.dart';
+import 'screens/auth_ui/welcome_screen.dart';
 import 'screens/schedule_screen/schedule_screen.dart';
 import 'screens/admin_screen/admin_screen.dart';
 import 'screens/auth_ui/sign_in_screen.dart';
@@ -14,10 +16,18 @@ import 'utils/app_constant.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  
+  // Initialize Supabase first
+  await Supabase.initialize(
+    url: SupabaseService.supabaseUrl,
+    anonKey: SupabaseService.supabaseAnonKey,
   );
   
+  // Initialize services
+  Get.put(SupabaseService());
+  Get.put(ScheduleService());
+  
+  // Initialize theme controller
   Get.put(ThemeController());
   
   runApp(const MyApp());
@@ -37,6 +47,7 @@ class MyApp extends StatelessWidget {
       builder: EasyLoading.init(),
       getPages: [
         GetPage(name: '/', page: () => const SplashScreen()),
+        GetPage(name: '/welcome', page: () => const WelcomeScreen()),
         GetPage(name: '/schedule', page: () => const ScheduleScreen()),
         GetPage(name: '/admin', page: () => const AdminScreen()),
         GetPage(name: '/sign-in', page: () => const SignInScreen()),

@@ -1,10 +1,13 @@
 // ignore_for_file: file_names
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import '../services/supabase_service.dart';
+import '../utils/app_constant.dart';
 
 class AdminController extends GetxController {
+  final SupabaseService _supabaseService = SupabaseService.to;
   late UserModel adminUser;
   
   // Observable variables
@@ -60,31 +63,30 @@ class AdminController extends GetxController {
   Future<void> loadAllUsers() async {
     try {
       isLoadingUsers.value = true;
-      print('DEBUG: Starting to load users from Firestore...');
+      print('DEBUG: Starting to load users from Supabase...');
       
-      // Simplified query to avoid index requirement
-      final usersSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .get();
+      // Get all users from Supabase
+      final List<Map<String, dynamic>> usersData = await _supabaseService.select(
+        'my_users',
+        orderBy: 'full_name',
+      );
       
-      print('DEBUG: Loaded ${usersSnapshot.docs.length} documents from Firestore');
+      print('DEBUG: Loaded ${usersData.length} documents from Supabase');
       
       final List<UserModel> users = [];
-      for (final doc in usersSnapshot.docs) {
+      for (final userData in usersData) {
         try {
-          final userData = doc.data();
-          print('DEBUG: Processing user document: ${doc.id}');
-          print('DEBUG: User data keys: ${userData.keys.toList()}');
+          print('DEBUG: Processing user: ${userData['full_name']}');
           
           // Check if required fields exist
-          if (!userData.containsKey('fullName') || !userData.containsKey('userRole')) {
-            print('DEBUG: Skipping user ${doc.id} - missing required fields');
+          if (userData['full_name'] == null || userData['user_role'] == null) {
+            print('DEBUG: Skipping user - missing required fields');
             continue;
           }
           
           final user = UserModel.fromMap(userData);
           
-          // Filter in app instead of in query to avoid index requirement
+          // Filter active non-admin users
           if (user.isActive && !user.isAdmin) {
             users.add(user);
             print('DEBUG: Added user: ${user.fullName} (${user.userRole})');
@@ -92,8 +94,8 @@ class AdminController extends GetxController {
             print('DEBUG: Filtered out user: ${user.fullName} (isActive: ${user.isActive}, isAdmin: ${user.isAdmin})');
           }
         } catch (e) {
-          print('Error parsing user ${doc.id}: $e');
-          print('DEBUG: User data: ${doc.data()}');
+          print('Error parsing user: $e');
+          print('DEBUG: User data: $userData');
         }
       }
       
@@ -156,46 +158,41 @@ class AdminController extends GetxController {
     try {
       isLoading.value = true;
       
-      final batch = FirebaseFirestore.instance.batch();
-      
       for (final user in selectedUsers) {
+        final startDateTime = DateTime(
+          selectedDate.value.year,
+          selectedDate.value.month,
+          selectedDate.value.day,
+          selectedStartTime.value.hour,
+          selectedStartTime.value.minute,
+        );
+        
+        final endDateTime = DateTime(
+          selectedDate.value.year,
+          selectedDate.value.month,
+          selectedDate.value.day,
+          selectedEndTime.value.hour,
+          selectedEndTime.value.minute,
+        );
+        
         final scheduleData = {
           'title': titleController.text.trim(),
           'description': descriptionController.text.trim(),
-          'startDateTime': Timestamp.fromDate(
-            DateTime(
-              selectedDate.value.year,
-              selectedDate.value.month,
-              selectedDate.value.day,
-              selectedStartTime.value.hour,
-              selectedStartTime.value.minute,
-            ),
-          ),
-          'endDateTime': Timestamp.fromDate(
-            DateTime(
-              selectedDate.value.year,
-              selectedDate.value.month,
-              selectedDate.value.day,
-              selectedEndTime.value.hour,
-              selectedEndTime.value.minute,
-            ),
-          ),
-          'createdByAdminId': adminUser.uId,
-          'assignedUserId': user.uId,
+          'start_date_time': startDateTime.toIso8601String(),
+          'end_date_time': endDateTime.toIso8601String(),
+          'created_by_admin_id': adminUser.uId,
+          'assigned_user_id': user.uId,
           'department': selectedDepartment.value,
           'location': locationController.text.trim(),
           'status': 'active',
-          'createdAt': Timestamp.now(),
-          'updatedAt': Timestamp.now(),
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
           'notes': notesController.text.trim(),
-          'isActive': true,
+          'is_active': true,
         };
         
-        final docRef = FirebaseFirestore.instance.collection('schedules').doc();
-        batch.set(docRef, scheduleData);
+        await _supabaseService.insert('employee_schedules', scheduleData);
       }
-      
-      await batch.commit();
       
       Get.snackbar(
         'Success', 
@@ -274,8 +271,59 @@ class AdminController extends GetxController {
   }
 
   // Logout functionality
-  void onLogoutPressed() {
-    Get.offAllNamed('/sign-in');
+  Future<void> onLogoutPressed() async {
+    try {
+      // Show loading indicator
+      EasyLoading.show(status: "Logging out...");
+      
+      // Sign out from Supabase
+      await _supabaseService.signOut();
+      
+      // Clear any cached user data
+      allUsers.clear();
+      selectedUsers.clear();
+      
+      // Reset form data
+      selectedStartTime.value = TimeOfDay.now();
+      selectedEndTime.value = TimeOfDay.now();
+      selectedDate.value = DateTime.now();
+      titleController.clear();
+      descriptionController.clear();
+      locationController.clear();
+      notesController.clear();
+      
+      // Dismiss loading
+      EasyLoading.dismiss();
+      
+      // Show success message
+      Get.snackbar(
+        'Success',
+        'Logged out successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppConstant.successColor,
+        colorText: Colors.white,
+        borderRadius: 15,
+        margin: EdgeInsets.all(15),
+      );
+      
+      // Navigate to welcome screen and clear navigation stack
+      Get.offAllNamed('/welcome');
+      
+    } catch (e) {
+      EasyLoading.dismiss();
+      
+      Get.snackbar(
+        'Error',
+        'Failed to logout. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+        borderRadius: 15,
+        margin: EdgeInsets.all(15),
+      );
+      
+      print('Logout error: $e');
+    }
   }
 
   // Get users by department for easier selection

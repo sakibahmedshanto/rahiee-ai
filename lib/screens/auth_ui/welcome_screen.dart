@@ -1,7 +1,6 @@
 import 'sign_in_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../../../controllers/auth_controller/google_sign_in_controller.dart';
 import '../../utils/app_constant.dart';
@@ -82,11 +81,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
   }
 
   void requestNotificationPermissions() async {
-    await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    // For Supabase projects, you can implement push notifications using:
+    // 1. FCM (Firebase Cloud Messaging) as a separate service
+    // 2. Supabase Edge Functions with push notification providers
+    // 3. Third-party notification services
+    
+    // For now, we'll skip notification permissions during migration
+    // TODO: Implement notification system with Supabase Edge Functions
+    try {
+      print('Notification permissions will be implemented with Supabase Edge Functions');
+    } catch (e) {
+      print('Error with notification setup: $e');
+    }
   }
 
   @override
@@ -327,8 +333,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(15),
-          onTap: () {
-            _googleSignInController.signInWithGoogle();
+          onTap: () async {
+            bool success = await _googleSignInController.signInWithGoogle();
+            if (!success) {
+              Get.snackbar(
+                'Error',
+                'Failed to sign in with Google. Please try again.',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppConstant.errorColor,
+                colorText: Colors.white,
+                borderRadius: 15,
+                margin: EdgeInsets.all(15),
+              );
+            }
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

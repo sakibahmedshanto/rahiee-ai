@@ -1,9 +1,14 @@
 // ignore_for_file: file_names
 
+import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import '../models/user_model.dart';
+import '../services/supabase_service.dart';
+import '../utils/app_constant.dart';
 
 class LandingController extends GetxController {
+  final SupabaseService _supabaseService = SupabaseService.to;
   late UserModel userModel;
   final RxBool isLoading = false.obs;
 
@@ -16,9 +21,46 @@ class LandingController extends GetxController {
       Get.offNamed('/admin', arguments: userModel);
     }
   }
-  void onLogoutPressed() {
-    // TODO: Implement logout functionality
-    Get.snackbar('Logout', 'Logout functionality will be implemented soon');
+  Future<void> onLogoutPressed() async {
+    try {
+      // Show loading indicator
+      EasyLoading.show(status: "Logging out...");
+      
+      // Sign out from Supabase
+      await _supabaseService.signOut();
+      
+      // Dismiss loading
+      EasyLoading.dismiss();
+      
+      // Show success message
+      Get.snackbar(
+        'Success',
+        'Logged out successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppConstant.successColor,
+        colorText: Colors.white,
+        borderRadius: 15,
+        margin: EdgeInsets.all(15),
+      );
+      
+      // Navigate to welcome screen and clear navigation stack
+      Get.offAllNamed('/welcome');
+      
+    } catch (e) {
+      EasyLoading.dismiss();
+      
+      Get.snackbar(
+        'Error',
+        'Failed to logout. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+        borderRadius: 15,
+        margin: EdgeInsets.all(15),
+      );
+      
+      print('Logout error: $e');
+    }
   }
 
   String get welcomeMessage {

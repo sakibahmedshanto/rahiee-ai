@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'auth_controller/google_sign_in_controller.dart';
 import '../screens/auth_ui/sign_in_screen.dart';
+import '../utils/app_constant.dart';
 
 class WelcomeController extends GetxController with GetTickerProviderStateMixin {
   final GoogleSignInController googleSignInController = Get.put(GoogleSignInController());
@@ -71,31 +71,33 @@ class WelcomeController extends GetxController with GetTickerProviderStateMixin 
   }
 
   Future<void> _requestNotificationPermissions() async {
+    // For Supabase projects, you can implement push notifications using:
+    // 1. FCM (Firebase Cloud Messaging) as a separate service
+    // 2. Supabase Edge Functions with push notification providers
+    // 3. Third-party notification services
+    
+    // For now, we'll skip notification permissions during migration
+    // TODO: Implement notification system with Supabase Edge Functions
     try {
-      NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        print('User granted notification permissions');
-      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-        print('User granted provisional notification permissions');
-      } else {
-        print('User declined or has not accepted notification permissions');
-      }
+      print('Notification permissions will be implemented with Supabase Edge Functions');
     } catch (e) {
-      print('Error requesting notification permissions: $e');
+      print('Error with notification setup: $e');
     }
   }
 
-  void onGoogleSignInPressed() {
-    googleSignInController.signInWithGoogle();
+  void onGoogleSignInPressed() async {
+    bool success = await googleSignInController.signInWithGoogle();
+    if (!success) {
+      Get.snackbar(
+        'Error',
+        'Failed to sign in with Google. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+        borderRadius: 15,
+        margin: EdgeInsets.all(15),
+      );
+    }
   }
 
   void onGetStartedPressed() {

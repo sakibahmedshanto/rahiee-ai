@@ -1,5 +1,4 @@
 // ignore_for_file: file_names
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TotalSummaryModel {
   final String summaryId;
@@ -130,137 +129,137 @@ class TotalSummaryModel {
     this.version,
   });
 
-  // Factory constructor from Firestore
-  factory TotalSummaryModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  // Factory constructor from Supabase JSON
+  factory TotalSummaryModel.fromJson(Map<String, dynamic> data) {
     return TotalSummaryModel(
-      summaryId: doc.id,
-      periodStart: (data['periodStart'] as Timestamp).toDate(),
-      periodEnd: (data['periodEnd'] as Timestamp).toDate(),
-      periodType: data['periodType'] ?? 'daily',
-      totalEmployees: data['totalEmployees'] ?? 0,
-      activeEmployees: data['activeEmployees'] ?? 0,
-      totalScheduledHours: Duration(milliseconds: data['totalScheduledHours'] ?? 0),
-      totalWorkedHours: Duration(milliseconds: data['totalWorkedHours'] ?? 0),
-      totalApprovedHours: Duration(milliseconds: data['totalApprovedHours'] ?? 0),
-      totalPaidHours: Duration(milliseconds: data['totalPaidHours'] ?? 0),
-      totalSchedules: data['totalSchedules'] ?? 0,
-      completedSchedules: data['completedSchedules'] ?? 0,
-      pendingSchedules: data['pendingSchedules'] ?? 0,
-      totalAttendances: data['totalAttendances'] ?? 0,
-      approvedAttendances: data['approvedAttendances'] ?? 0,
-      unusualAttendances: data['unusualAttendances'] ?? 0,
-      appealedAttendances: data['appealedAttendances'] ?? 0,
-      totalPayroll: data['totalPayroll']?.toDouble() ?? 0.0,
-      pendingPayments: data['pendingPayments']?.toDouble() ?? 0.0,
-      totalBonuses: data['totalBonuses']?.toDouble() ?? 0.0,
-      totalDeductions: data['totalDeductions']?.toDouble() ?? 0.0,
-      averageHourlyRate: data['averageHourlyRate']?.toDouble() ?? 0.0,
-      departmentPayroll: data['departmentPayroll'] != null
-          ? Map<String, double>.from(data['departmentPayroll'].map((k, v) => MapEntry(k, v.toDouble())))
+      summaryId: data['summary_id'] ?? '',
+      periodStart: DateTime.parse(data['period_start']),
+      periodEnd: DateTime.parse(data['period_end']),
+      periodType: data['period_type'] ?? 'daily',
+      totalEmployees: data['total_employees'] ?? 0,
+      activeEmployees: data['active_employees'] ?? 0,
+      totalScheduledHours: Duration(milliseconds: data['total_scheduled_hours'] ?? 0),
+      totalWorkedHours: Duration(milliseconds: data['total_worked_hours'] ?? 0),
+      totalApprovedHours: Duration(milliseconds: data['total_approved_hours'] ?? 0),
+      totalPaidHours: Duration(milliseconds: data['total_paid_hours'] ?? 0),
+      totalSchedules: data['total_schedules'] ?? 0,
+      completedSchedules: data['completed_schedules'] ?? 0,
+      pendingSchedules: data['pending_schedules'] ?? 0,
+      totalAttendances: data['total_attendances'] ?? 0,
+      approvedAttendances: data['approved_attendances'] ?? 0,
+      unusualAttendances: data['unusual_attendances'] ?? 0,
+      appealedAttendances: data['appealed_attendances'] ?? 0,
+      totalPayroll: data['total_payroll']?.toDouble() ?? 0.0,
+      pendingPayments: data['pending_payments']?.toDouble() ?? 0.0,
+      totalBonuses: data['total_bonuses']?.toDouble() ?? 0.0,
+      totalDeductions: data['total_deductions']?.toDouble() ?? 0.0,
+      averageHourlyRate: data['average_hourly_rate']?.toDouble() ?? 0.0,
+      departmentPayroll: data['department_payroll'] != null
+          ? Map<String, double>.from(data['department_payroll'].map((k, v) => MapEntry(k, v.toDouble())))
           : null,
-      overallAttendanceRate: data['overallAttendanceRate']?.toDouble() ?? 0.0,
-      overallApprovalRate: data['overallApprovalRate']?.toDouble() ?? 0.0,
-      averagePunctualityScore: data['averagePunctualityScore']?.toDouble() ?? 0.0,
-      totalAbsences: data['totalAbsences'] ?? 0,
-      employeeRetentionRate: data['employeeRetentionRate']?.toDouble() ?? 0.0,
-      schedulesByDepartment: data['schedulesByDepartment'] != null
-          ? Map<String, int>.from(data['schedulesByDepartment'])
+      overallAttendanceRate: data['overall_attendance_rate']?.toDouble() ?? 0.0,
+      overallApprovalRate: data['overall_approval_rate']?.toDouble() ?? 0.0,
+      averagePunctualityScore: data['average_punctuality_score']?.toDouble() ?? 0.0,
+      totalAbsences: data['total_absences'] ?? 0,
+      employeeRetentionRate: data['employee_retention_rate']?.toDouble() ?? 0.0,
+      schedulesByDepartment: data['schedules_by_department'] != null
+          ? Map<String, int>.from(data['schedules_by_department'])
           : null,
-      hoursWorkedByDepartment: data['hoursWorkedByDepartment'] != null
-          ? Map<String, Duration>.from(data['hoursWorkedByDepartment'].map((k, v) => MapEntry(k, Duration(milliseconds: v))))
+      hoursWorkedByDepartment: data['hours_worked_by_department'] != null
+          ? Map<String, Duration>.from(data['hours_worked_by_department'].map((k, v) => MapEntry(k, Duration(milliseconds: v))))
           : null,
-      performanceByDepartment: data['performanceByDepartment'] != null
-          ? Map<String, double>.from(data['performanceByDepartment'].map((k, v) => MapEntry(k, v.toDouble())))
+      performanceByDepartment: data['performance_by_department'] != null
+          ? Map<String, double>.from(data['performance_by_department'].map((k, v) => MapEntry(k, v.toDouble())))
           : null,
-      topPerformers: data['topPerformers'] != null
-          ? (data['topPerformers'] as List).map((e) => TopPerformer.fromMap(e)).toList()
+      topPerformers: data['top_performers'] != null
+          ? (data['top_performers'] as List).map((e) => TopPerformer.fromMap(e)).toList()
           : null,
-      problematicAreas: data['problematicAreas'] != null
-          ? List<String>.from(data['problematicAreas'])
+      problematicAreas: data['problematic_areas'] != null
+          ? List<String>.from(data['problematic_areas'])
           : null,
       trends: data['trends'],
-      growthRate: data['growthRate']?.toDouble(),
+      growthRate: data['growth_rate']?.toDouble(),
       insights: data['insights'],
       predictions: data['predictions'],
-      complianceMetrics: data['complianceMetrics'] != null
-          ? Map<String, int>.from(data['complianceMetrics'])
+      complianceMetrics: data['compliance_metrics'] != null
+          ? Map<String, int>.from(data['compliance_metrics'])
           : null,
-      auditFlags: data['auditFlags'] != null
-          ? List<String>.from(data['auditFlags'])
+      auditFlags: data['audit_flags'] != null
+          ? List<String>.from(data['audit_flags'])
           : null,
-      overtimePercentage: data['overtimePercentage']?.toDouble() ?? 0.0,
-      policyViolations: data['policyViolations'] ?? 0,
-      mlVerificationFailures: data['mlVerificationFailures'] ?? 0,
-      systemErrors: data['systemErrors'] ?? 0,
-      dataAccuracy: data['dataAccuracy']?.toDouble() ?? 100.0,
-      lastSystemUpdate: (data['lastSystemUpdate'] as Timestamp).toDate(),
-      lastUpdated: (data['lastUpdated'] as Timestamp).toDate(),
-      updatedBySystem: data['updatedBySystem'] ?? 'auto_function',
-      isFinalized: data['isFinalized'] ?? false,
-      finalizedByAdminId: data['finalizedByAdminId'],
-      finalizedAt: data['finalizedAt'] != null
-          ? (data['finalizedAt'] as Timestamp).toDate()
+      overtimePercentage: data['overtime_percentage']?.toDouble() ?? 0.0,
+      policyViolations: data['policy_violations'] ?? 0,
+      mlVerificationFailures: data['ml_verification_failures'] ?? 0,
+      systemErrors: data['system_errors'] ?? 0,
+      dataAccuracy: data['data_accuracy']?.toDouble() ?? 100.0,
+      lastSystemUpdate: DateTime.parse(data['last_system_update']),
+      lastUpdated: DateTime.parse(data['last_updated']),
+      updatedBySystem: data['updated_by_system'] ?? 'auto_function',
+      isFinalized: data['is_finalized'] ?? false,
+      finalizedByAdminId: data['finalized_by_admin_id'],
+      finalizedAt: data['finalized_at'] != null
+          ? DateTime.parse(data['finalized_at'])
           : null,
-      reportGeneratedBy: data['reportGeneratedBy'],
+      reportGeneratedBy: data['report_generated_by'],
       metadata: data['metadata'],
       version: data['version'],
     );
   }
 
-  // Convert to Firestore document
-  Map<String, dynamic> toFirestore() {
+  // Convert to Supabase JSON
+  Map<String, dynamic> toJson() {
     return {
-      'periodStart': Timestamp.fromDate(periodStart),
-      'periodEnd': Timestamp.fromDate(periodEnd),
-      'periodType': periodType,
-      'totalEmployees': totalEmployees,
-      'activeEmployees': activeEmployees,
-      'totalScheduledHours': totalScheduledHours.inMilliseconds,
-      'totalWorkedHours': totalWorkedHours.inMilliseconds,
-      'totalApprovedHours': totalApprovedHours.inMilliseconds,
-      'totalPaidHours': totalPaidHours.inMilliseconds,
-      'totalSchedules': totalSchedules,
-      'completedSchedules': completedSchedules,
-      'pendingSchedules': pendingSchedules,
-      'totalAttendances': totalAttendances,
-      'approvedAttendances': approvedAttendances,
-      'unusualAttendances': unusualAttendances,
-      'appealedAttendances': appealedAttendances,
-      'totalPayroll': totalPayroll,
-      'pendingPayments': pendingPayments,
-      'totalBonuses': totalBonuses,
-      'totalDeductions': totalDeductions,
-      'averageHourlyRate': averageHourlyRate,
-      'departmentPayroll': departmentPayroll,
-      'overallAttendanceRate': overallAttendanceRate,
-      'overallApprovalRate': overallApprovalRate,
-      'averagePunctualityScore': averagePunctualityScore,
-      'totalAbsences': totalAbsences,
-      'employeeRetentionRate': employeeRetentionRate,
-      'schedulesByDepartment': schedulesByDepartment,
-      'hoursWorkedByDepartment': hoursWorkedByDepartment?.map((k, v) => MapEntry(k, v.inMilliseconds)),
-      'performanceByDepartment': performanceByDepartment,
-      'topPerformers': topPerformers?.map((e) => e.toMap()).toList(),
-      'problematicAreas': problematicAreas,
+      'summary_id': summaryId,
+      'period_start': periodStart.toIso8601String(),
+      'period_end': periodEnd.toIso8601String(),
+      'period_type': periodType,
+      'total_employees': totalEmployees,
+      'active_employees': activeEmployees,
+      'total_scheduled_hours': totalScheduledHours.inMilliseconds,
+      'total_worked_hours': totalWorkedHours.inMilliseconds,
+      'total_approved_hours': totalApprovedHours.inMilliseconds,
+      'total_paid_hours': totalPaidHours.inMilliseconds,
+      'total_schedules': totalSchedules,
+      'completed_schedules': completedSchedules,
+      'pending_schedules': pendingSchedules,
+      'total_attendances': totalAttendances,
+      'approved_attendances': approvedAttendances,
+      'unusual_attendances': unusualAttendances,
+      'appealed_attendances': appealedAttendances,
+      'total_payroll': totalPayroll,
+      'pending_payments': pendingPayments,
+      'total_bonuses': totalBonuses,
+      'total_deductions': totalDeductions,
+      'average_hourly_rate': averageHourlyRate,
+      'department_payroll': departmentPayroll,
+      'overall_attendance_rate': overallAttendanceRate,
+      'overall_approval_rate': overallApprovalRate,
+      'average_punctuality_score': averagePunctualityScore,
+      'total_absences': totalAbsences,
+      'employee_retention_rate': employeeRetentionRate,
+      'schedules_by_department': schedulesByDepartment,
+      'hours_worked_by_department': hoursWorkedByDepartment?.map((k, v) => MapEntry(k, v.inMilliseconds)),
+      'performance_by_department': performanceByDepartment,
+      'top_performers': topPerformers?.map((e) => e.toMap()).toList(),
+      'problematic_areas': problematicAreas,
       'trends': trends,
-      'growthRate': growthRate,
+      'growth_rate': growthRate,
       'insights': insights,
       'predictions': predictions,
-      'complianceMetrics': complianceMetrics,
-      'auditFlags': auditFlags,
-      'overtimePercentage': overtimePercentage,
-      'policyViolations': policyViolations,
-      'mlVerificationFailures': mlVerificationFailures,
-      'systemErrors': systemErrors,
-      'dataAccuracy': dataAccuracy,
-      'lastSystemUpdate': Timestamp.fromDate(lastSystemUpdate),
-      'lastUpdated': Timestamp.fromDate(lastUpdated),
-      'updatedBySystem': updatedBySystem,
-      'isFinalized': isFinalized,
-      'finalizedByAdminId': finalizedByAdminId,
-      'finalizedAt': finalizedAt != null ? Timestamp.fromDate(finalizedAt!) : null,
-      'reportGeneratedBy': reportGeneratedBy,
+      'compliance_metrics': complianceMetrics,
+      'audit_flags': auditFlags,
+      'overtime_percentage': overtimePercentage,
+      'policy_violations': policyViolations,
+      'ml_verification_failures': mlVerificationFailures,
+      'system_errors': systemErrors,
+      'data_accuracy': dataAccuracy,
+      'last_system_update': lastSystemUpdate.toIso8601String(),
+      'last_updated': lastUpdated.toIso8601String(),
+      'updated_by_system': updatedBySystem,
+      'is_finalized': isFinalized,
+      'finalized_by_admin_id': finalizedByAdminId,
+      'finalized_at': finalizedAt?.toIso8601String(),
+      'report_generated_by': reportGeneratedBy,
       'metadata': metadata,
       'version': version,
     };

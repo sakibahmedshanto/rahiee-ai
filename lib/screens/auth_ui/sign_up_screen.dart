@@ -1,9 +1,9 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, avoid_unnecessary_containers, file_names, unused_local_variable
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../controllers/auth_controller/sign_up_controller.dart';
 import '../../utils/app_constant.dart';
@@ -422,7 +422,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
         margin: EdgeInsets.all(15),
       );
     } else {
-      UserCredential? userCredential =
+      AuthResponse? authResponse =
           await signUpController.signUpMethod(
         name,
         email,
@@ -432,10 +432,10 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
         userDeviceToken,
       );
 
-      if (userCredential != null) {
+      if (authResponse != null && authResponse.user != null) {
         Get.snackbar(
           "Success",
-          "Verification email sent. Please check your email.",
+          "Account created successfully! Please check your email for verification.",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppConstant.successColor,
           colorText: Colors.white,
@@ -443,10 +443,21 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
           margin: EdgeInsets.all(15),
         );
 
-        FirebaseAuth.instance.signOut();
+        // Sign out and redirect to sign-in
+        await Supabase.instance.client.auth.signOut();
         Get.offAll(() => SignInScreen(),
             transition: Transition.leftToRight,
             duration: Duration(milliseconds: 300));
+      } else {
+        Get.snackbar(
+          "Error",
+          "Failed to create account. Please try again.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppConstant.errorColor,
+          colorText: Colors.white,
+          borderRadius: 15,
+          margin: EdgeInsets.all(15),
+        );
       }
     }
   }
