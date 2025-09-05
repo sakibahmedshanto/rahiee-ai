@@ -2,12 +2,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import '../models/user_model.dart';
-import '../services/supabase_service.dart';
-import '../utils/app_constant.dart';
+import '../../models/user_model.dart';
+import '../../models/schedule_model.dart';
+import '../../services/supabase_service.dart';
+import '../../services/schedule_service.dart';
+import '../../utils/app_constant.dart';
 
 class AdminController extends GetxController {
   final SupabaseService _supabaseService = SupabaseService.to;
+  final ScheduleService _scheduleService = ScheduleService.to;
   late UserModel adminUser;
   
   // Observable variables
@@ -65,7 +68,7 @@ class AdminController extends GetxController {
       isLoadingUsers.value = true;
       print('DEBUG: Starting to load users from Supabase...');
       
-      // Get all users from Supabase
+      // Get all users from Supabase using service layer
       final List<Map<String, dynamic>> usersData = await _supabaseService.select(
         'my_users',
         orderBy: 'full_name',
@@ -73,48 +76,69 @@ class AdminController extends GetxController {
       
       print('DEBUG: Loaded ${usersData.length} documents from Supabase');
       
-      final List<UserModel> users = [];
-      for (final userData in usersData) {
-        try {
-          print('DEBUG: Processing user: ${userData['full_name']}');
-          
-          // Check if required fields exist
-          if (userData['full_name'] == null || userData['user_role'] == null) {
-            print('DEBUG: Skipping user - missing required fields');
-            continue;
-          }
-          
-          final user = UserModel.fromMap(userData);
-          
-          // Filter active non-admin users
-          if (user.isActive && !user.isAdmin) {
-            users.add(user);
-            print('DEBUG: Added user: ${user.fullName} (${user.userRole})');
-          } else {
-            print('DEBUG: Filtered out user: ${user.fullName} (isActive: ${user.isActive}, isAdmin: ${user.isAdmin})');
-          }
-        } catch (e) {
-          print('Error parsing user: $e');
-          print('DEBUG: User data: $userData');
-        }
-      }
+      // Process users using helper method
+      final users = _processUserData(usersData);
       
-      // Sort users by department and then by name
-      users.sort((a, b) {
-        final deptComparison = a.department.compareTo(b.department);
-        if (deptComparison != 0) return deptComparison;
-        return a.fullName.compareTo(b.fullName);
-      });
+      // Sort and set users
+      _sortAndSetUsers(users);
       
-      allUsers.value = users;
       print('DEBUG: Successfully loaded ${users.length} valid users');
     } catch (e) {
       print('Error loading users: $e');
-      Get.snackbar('Error', 'Failed to load users: $e');
+      Get.snackbar(
+        'Error', 
+        'Failed to load users: $e',
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+      );
     } finally {
       isLoadingUsers.value = false;
       print('DEBUG: Finished loading users');
     }
+  }
+
+  // Helper method to process user data
+  List<UserModel> _processUserData(List<Map<String, dynamic>> usersData) {
+    final List<UserModel> users = [];
+    
+    for (final userData in usersData) {
+      try {
+        print('DEBUG: Processing user: ${userData['full_name']}');
+        
+        // Check if required fields exist
+        if (userData['full_name'] == null || userData['user_role'] == null) {
+          print('DEBUG: Skipping user - missing required fields');
+          continue;
+        }
+        
+        final user = UserModel.fromMap(userData);
+        
+        // Filter active non-admin users
+        if (user.isActive && !user.isAdmin) {
+          users.add(user);
+          print('DEBUG: Added user: ${user.fullName} (${user.userRole})');
+        } else {
+          print('DEBUG: Filtered out user: ${user.fullName} (isActive: ${user.isActive}, isAdmin: ${user.isAdmin})');
+        }
+      } catch (e) {
+        print('Error parsing user: $e');
+        print('DEBUG: User data: $userData');
+      }
+    }
+    
+    return users;
+  }
+
+  // Helper method to sort and set users
+  void _sortAndSetUsers(List<UserModel> users) {
+    // Sort users by department and then by name
+    users.sort((a, b) {
+      final deptComparison = a.department.compareTo(b.department);
+      if (deptComparison != 0) return deptComparison;
+      return a.fullName.compareTo(b.fullName);
+    });
+    
+    allUsers.value = users;
   }
 
   // Toggle user selection
@@ -158,55 +182,112 @@ class AdminController extends GetxController {
     try {
       isLoading.value = true;
       
-      for (final user in selectedUsers) {
-        final startDateTime = DateTime(
-          selectedDate.value.year,
-          selectedDate.value.month,
-          selectedDate.value.day,
-          selectedStartTime.value.hour,
-          selectedStartTime.value.minute,
-        );
-        
-        final endDateTime = DateTime(
-          selectedDate.value.year,
-          selectedDate.value.month,
-          selectedDate.value.day,
-          selectedEndTime.value.hour,
-          selectedEndTime.value.minute,
-        );
-        
-        final scheduleData = {
-          'title': titleController.text.trim(),
-          'description': descriptionController.text.trim(),
-          'start_date_time': startDateTime.toIso8601String(),
-          'end_date_time': endDateTime.toIso8601String(),
-          'created_by_admin_id': adminUser.uId,
-          'assigned_user_id': user.uId,
-          'department': selectedDepartment.value,
-          'location': locationController.text.trim(),
-          'status': 'active',
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-          'notes': notesController.text.trim(),
-          'is_active': true,
-        };
-        
-        await _supabaseService.insert('employee_schedules', scheduleData);
-      }
-      
-      Get.snackbar(
-        'Success', 
-        'Schedule created for ${selectedUsers.length} employee(s)',
-        snackPosition: SnackPosition.TOP,
+      // Create base schedule data
+      final baseStartDateTime = DateTime(
+        selectedDate.value.year,
+        selectedDate.value.month,
+        selectedDate.value.day,
+        selectedStartTime.value.hour,
+        selectedStartTime.value.minute,
       );
       
-      _clearForm();
+      final baseEndDateTime = DateTime(
+        selectedDate.value.year,
+        selectedDate.value.month,
+        selectedDate.value.day,
+        selectedEndTime.value.hour,
+        selectedEndTime.value.minute,
+      );
+      
+      // Create schedules for all selected users
+      final List<ScheduleModel> schedules = selectedUsers.map((user) {
+        return ScheduleModel(
+          scheduleId: '', // Will be auto-generated by Supabase
+          title: titleController.text.trim(),
+          description: descriptionController.text.trim(),
+          startDateTime: baseStartDateTime,
+          endDateTime: baseEndDateTime,
+          createdByAdminId: adminUser.uId,
+          assignedUserId: user.uId,
+          department: selectedDepartment.value,
+          location: locationController.text.trim(),
+          status: 'active',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          notes: notesController.text.trim(),
+          isActive: true,
+        );
+      }).toList();
+      
+      // Create schedules using proper service layer
+      final results = await _createMultipleSchedules(schedules);
+      
+      // Handle results
+      _handleScheduleCreationResults(results);
       
     } catch (e) {
       print('Error creating schedule: $e');
-      Get.snackbar('Error', 'Failed to create schedule: $e');
+      Get.snackbar(
+        'Error', 
+        'Failed to create schedule: $e',
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Helper method to create multiple schedules efficiently
+  Future<Map<String, int>> _createMultipleSchedules(List<ScheduleModel> schedules) async {
+    int successCount = 0;
+    int failureCount = 0;
+    
+    for (final schedule in schedules) {
+      final success = await _scheduleService.createSchedule(schedule);
+      if (success) {
+        successCount++;
+      } else {
+        failureCount++;
+      }
+    }
+    
+    return {'success': successCount, 'failure': failureCount};
+  }
+
+  // Helper method to handle schedule creation results
+  void _handleScheduleCreationResults(Map<String, int> results) {
+    final successCount = results['success'] ?? 0;
+    final failureCount = results['failure'] ?? 0;
+    
+    if (successCount > 0 && failureCount == 0) {
+      Get.snackbar(
+        'Success', 
+        'Schedule created for all $successCount employee(s)',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: AppConstant.successColor,
+        colorText: Colors.white,
+        duration: Duration(seconds: 3),
+      );
+      _clearForm();
+    } else if (successCount > 0 && failureCount > 0) {
+      Get.snackbar(
+        'Partial Success', 
+        'Schedule created for $successCount employee(s). $failureCount failed.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: Duration(seconds: 4),
+      );
+    } else {
+      Get.snackbar(
+        'Error', 
+        'Failed to create schedule for all employees',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+        duration: Duration(seconds: 4),
+      );
     }
   }
 

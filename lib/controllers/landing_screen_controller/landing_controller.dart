@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import '../models/user_model.dart';
-import '../services/supabase_service.dart';
-import '../utils/app_constant.dart';
+import '../../models/user_model.dart';
+import '../../services/supabase_service.dart';
+import '../../utils/app_constant.dart';
 
 class LandingController extends GetxController {
   final SupabaseService _supabaseService = SupabaseService.to;

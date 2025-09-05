@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../models/user_model.dart';
 import '../../utils/app_constant.dart';
-import '../../controllers/landing_controller.dart';
+import '../../controllers/landing_screen_controller/landing_controller.dart';
 import '../schedule_screen/schedule_screen.dart';
 import '../schedule_screen/components/schedule_floating_action_button.dart';
 import '../profile_screen/profile_screen.dart';

@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/landing_controller.dart';
+import '../../controllers/landing_screen_controller/landing_controller.dart';
 import '../../utils/app_constant.dart';
 
 class ProfileScreen extends StatelessWidget {

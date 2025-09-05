@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../utils/app_constant.dart';
-import '../../controllers/schedule_controller.dart';
+import '../../controllers/schedule_controller/schedule_controller.dart';
 import 'components/schedule_header.dart';
 import 'components/schedule_date_picker.dart';
 import 'components/role_section.dart';

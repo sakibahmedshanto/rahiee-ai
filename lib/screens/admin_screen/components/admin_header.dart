@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../utils/app_constant.dart';
-import '../../../controllers/admin_controller.dart';
+import '../../../controllers/admin_controller/admin_controller.dart';
 
 class AdminHeader extends StatelessWidget {
   const AdminHeader({super.key});
