@@ -14,7 +14,7 @@ class SignUpController extends GetxController {
   //for password visibility
   var isPasswordVisible = false.obs;
 
-  Future<AuthResponse?> signUpMethod(
+  Future<Map<String, dynamic>> signUpMethod(
     String userName,
     String userEmail,
     String userPhone,
@@ -56,22 +56,61 @@ class SignUpController extends GetxController {
         // Add user data to Supabase database
         final success = await _getUserDataController.createUserModel(userModel);
         
-        if (!success) {
-          EasyLoading.dismiss();
-          // Let UI handle error display
-          print("Failed to create user profile"); // Log for debugging
-          return null;
+        EasyLoading.dismiss();
+        
+        if (success) {
+          return {
+            'success': true,
+            'authResponse': response,
+            'message': 'Account created successfully! A verification email has been sent to your email address. Please check your inbox and verify your account before signing in.'
+          };
+        } else {
+          // The auth account was created successfully (email sent), but profile creation failed
+          if (response.user != null) {
+            return {
+              'success': true, // Still consider it a success since auth worked and email was sent
+              'authResponse': response,
+              'message': 'Account created successfully! A verification email has been sent to your email address. Please verify your account before signing in.'
+            };
+          } else {
+            return {
+              'success': false,
+              'authResponse': null,
+              'message': 'Failed to create account. Please try again.'
+            };
+          }
         }
+      } else {
+        EasyLoading.dismiss();
+        return {
+          'success': false,
+          'authResponse': null,
+          'message': 'Failed to create account. Please try again.'
+        };
       }
-      
-      EasyLoading.dismiss();
-      return response;
       
     } catch (e) {
       EasyLoading.dismiss();
-      // Remove duplicate error message - let UI handle error display
-      print("Sign up error: $e"); // Log for debugging
-      return null;
+      print("Sign up error: $e");
+      
+      // Parse error for user-friendly messages
+      String errorMessage = 'Failed to create account. Please try again.';
+      
+      if (e.toString().contains('email_address_invalid')) {
+        errorMessage = 'Invalid email address format.';
+      } else if (e.toString().contains('email_address_not_authorized')) {
+        errorMessage = 'Email address not authorized for signup.';
+      } else if (e.toString().contains('password')) {
+        errorMessage = 'Password does not meet requirements.';
+      } else if (e.toString().contains('User already registered')) {
+        errorMessage = 'An account with this email already exists.';
+      }
+      
+      return {
+        'success': false,
+        'authResponse': null,
+        'message': errorMessage
+      };
     }
   }
 }

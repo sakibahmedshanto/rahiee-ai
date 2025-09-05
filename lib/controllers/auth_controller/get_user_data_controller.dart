@@ -23,8 +23,6 @@ class GetUserDataController extends GetxController {
   
   Future<UserModel?> getUserModel(String uId) async {
     try {
-      print('DEBUG: Getting user model for uId: $uId');
-      
       // Fetch user data from Supabase based on uId
       final userData = await _supabaseService.selectSingle(
         'my_users',
@@ -33,10 +31,8 @@ class GetUserDataController extends GetxController {
       );
       
       if (userData != null) {
-        print('DEBUG: Found user data: ${userData['full_name']}');
         return UserModel.fromMap(userData);
       } else {
-        print('DEBUG: No user found with uId: $uId');
         return null;
       }
     } catch (e) {
@@ -47,29 +43,55 @@ class GetUserDataController extends GetxController {
 
   Future<bool> createUserModel(UserModel userModel) async {
     try {
-      print('DEBUG: Creating user model for: ${userModel.fullName}');
-      print('DEBUG: User ID: ${userModel.uId}');
-      print('DEBUG: Employee ID: ${userModel.employeeId}');
-      print('DEBUG: Email: ${userModel.email}');
-      
       final userMap = userModel.toMap();
-      print('DEBUG: User data to insert: $userMap');
-      
       await _supabaseService.insert('my_users', userMap);
-      
-      print('DEBUG: Successfully created user model');
       return true;
     } catch (e) {
-      print('ERROR: Failed to create user model: $e');
-      print('ERROR: Stack trace: ${StackTrace.current}');
+      print('Error creating user profile: $e');
+      if (e.toString().contains('column') && e.toString().contains('does not exist')) {
+        // Try creating with minimal data compatible with old schema
+        return await _createUserWithMinimalData(userModel);
+      }
+      return false;
+    }
+  }
+
+  Future<bool> _createUserWithMinimalData(UserModel userModel) async {
+    try {
+      // Create minimal user data that should work with both old and new schema
+      final minimalUserMap = {
+        'id': userModel.uId,
+        'email': userModel.email,
+        'full_name': userModel.fullName,
+      };
+
+      // Add optional fields that might exist in the old schema
+      if (userModel.phone.isNotEmpty) {
+        minimalUserMap['phone_number'] = userModel.phone; // Old schema uses phone_number
+      }
+      
+      if (userModel.department.isNotEmpty) {
+        minimalUserMap['department'] = userModel.department;
+      }
+      
+      if (userModel.position.isNotEmpty) {
+        minimalUserMap['position'] = userModel.position;
+      }
+
+      if (userModel.employeeId.isNotEmpty) {
+        minimalUserMap['employee_id'] = userModel.employeeId;
+      }
+
+      await _supabaseService.insert('my_users', minimalUserMap);
+      return true;
+    } catch (e) {
+      print('Error creating user profile with minimal data: $e');
       return false;
     }
   }
 
   Future<bool> updateUserModel(UserModel userModel) async {
     try {
-      print('DEBUG: Updating user model for: ${userModel.fullName}');
-      
       await _supabaseService.update(
         'my_users',
         userModel.toMap(),
@@ -77,7 +99,6 @@ class GetUserDataController extends GetxController {
         eqValue: userModel.uId,
       );
       
-      print('DEBUG: Successfully updated user model');
       return true;
     } catch (e) {
       print('Error updating user model: $e');
@@ -87,8 +108,6 @@ class GetUserDataController extends GetxController {
 
   Future<List<UserModel>> getAllActiveUsers() async {
     try {
-      print('DEBUG: Getting all active users');
-      
       final usersData = await _supabaseService.select(
         'my_users',
         eq: 'is_active',

@@ -404,53 +404,55 @@ class _SignInScreenState extends State<SignInScreen>
     }
 
     try {
-      AuthResponse? authResponse = await signInController.signInMethod(email, password);
+      Map<String, dynamic> result = await signInController.signInMethod(email, password);
 
-      if (authResponse != null && authResponse.user != null) {
-        // For Supabase, email verification status is in user.emailConfirmedAt
-        if (authResponse.user!.emailConfirmedAt != null) {
-          try {
-            // Get the complete user model
-            UserModel? userModel = await getUserDataController
-                .getUserModel(authResponse.user!.id);
+      if (result['success'] == true) {
+        AuthResponse authResponse = result['authResponse'];
+        
+        // For Supabase, email verification status is already checked in controller
+        try {
+          // Get the complete user model
+          UserModel? userModel = await getUserDataController
+              .getUserModel(authResponse.user!.id);
+          
+          // If user model doesn't exist, create it automatically
+          if (userModel == null) {
+            print('User profile not found, creating default profile...');
             
-            // If user model doesn't exist, create it automatically
-            if (userModel == null) {
-              print('User profile not found, creating default profile...');
-              
-              // Create a default user profile from auth data
-              final authUser = authResponse.user!;
-              final defaultUserModel = UserModel(
-                uId: authUser.id,
-                employeeId: 'EMP-${authUser.id.substring(0, 8).toUpperCase()}',
-                username: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
-                email: authUser.email ?? email,
-                phone: authUser.userMetadata?['phone'] ?? '',
-                fullName: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
-                department: 'General',
-                position: 'Employee',
-                userRole: 'employee',
-                userImg: null,
-                userDeviceToken: null,
-                isActive: true,
-                createdOn: DateTime.now(),
-                workLocation: authUser.userMetadata?['city'],
-                biometricEnabled: false,
-                notificationsEnabled: true,
-                preferredLanguage: 'en',
-                leaveBalance: 30,
-                totalCoverageGiven: 0,
-                totalCoverageReceived: 0,
-                attendanceRate: 100.0,
-              );
+            // Create a default user profile from auth data
+            final authUser = authResponse.user!;
+            final defaultUserModel = UserModel(
+              uId: authUser.id,
+              employeeId: 'EMP-${authUser.id.substring(0, 8).toUpperCase()}',
+              username: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
+              email: authUser.email ?? email,
+              phone: authUser.userMetadata?['phone'] ?? '',
+              fullName: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
+              department: 'General',
+              position: 'Employee',
+              userRole: 'employee',
+              userImg: null,
+              userDeviceToken: null,
+              isActive: true,
+              createdOn: DateTime.now(),
+              workLocation: authUser.userMetadata?['city'],
+              biometricEnabled: false,
+              notificationsEnabled: true,
+              preferredLanguage: 'en',
+              leaveBalance: 30,
+              totalCoverageGiven: 0,
+              totalCoverageReceived: 0,
+              attendanceRate: 100.0,
+            );
 
-              // Try to create the user profile
-              final success = await getUserDataController.createUserModel(defaultUserModel);
-              
-              if (success) {
-                userModel = defaultUserModel;
-                print('Default user profile created successfully');
-              } else {
+            // Try to create the user profile
+            final success = await getUserDataController.createUserModel(defaultUserModel);
+            
+            if (success) {
+              userModel = defaultUserModel;
+              print('Default user profile created successfully');
+            } else {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
                 Get.snackbar(
                   "Error",
                   "Failed to create user profile. Please contact support.",
@@ -460,13 +462,15 @@ class _SignInScreenState extends State<SignInScreen>
                   borderRadius: 15,
                   margin: EdgeInsets.all(15),
                 );
-                return;
-              }
+              });
+              return;
             }
-            
-            if (userModel != null) {
-              // Check if user is admin
-              if (userModel.isAdmin) {
+          }
+          
+          // At this point, userModel should not be null
+          if (userModel != null) {
+            if (userModel.isAdmin) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
                 Get.snackbar(
                   "Success",
                   "Admin login successful!",
@@ -478,7 +482,9 @@ class _SignInScreenState extends State<SignInScreen>
                 );
                 // Navigate to admin screen
                 Get.offAllNamed('/admin', arguments: userModel);
-              } else {
+              });
+            } else {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
                 Get.snackbar(
                   "Success",
                   "Login successful!",
@@ -489,10 +495,12 @@ class _SignInScreenState extends State<SignInScreen>
                   margin: EdgeInsets.all(15),
                 );
                 Get.offAll(() => LandingScreen(userModel: userModel!));
-              }
+              });
             }
-          } catch (e) {
-            print('Error loading user profile: $e');
+          }
+        } catch (e) {
+          print('Error loading user profile: $e');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             Get.snackbar(
               "Error",
               "Failed to load user profile: ${e.toString()}",
@@ -502,39 +510,36 @@ class _SignInScreenState extends State<SignInScreen>
               borderRadius: 15,
               margin: EdgeInsets.all(15),
             );
-          }
-        } else {
+          });
+        }
+      } else {
+        // Show the specific error message from the controller
+        WidgetsBinding.instance.addPostFrameCallback((_) {
           Get.snackbar(
             "Error",
-            "Please verify your email address first",
+            result['message'],
             snackPosition: SnackPosition.BOTTOM,
             backgroundColor: AppConstant.errorColor,
             colorText: Colors.white,
             borderRadius: 15,
             margin: EdgeInsets.all(15),
+            duration: Duration(seconds: 5), // Show longer for verification messages
           );
-        }
-      } else {
+        });
+      }
+    } catch (e) {
+      print('Sign in error: $e');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.snackbar(
           "Error",
-          "Invalid email or password",
+          "An error occurred during sign in: ${e.toString()}",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppConstant.errorColor,
           colorText: Colors.white,
           borderRadius: 15,
           margin: EdgeInsets.all(15),
         );
-      }
-    } catch (e) {
-      Get.snackbar(
-        "Error",
-        "An error occurred during sign in",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppConstant.errorColor,
-        colorText: Colors.white,
-        borderRadius: 15,
-        margin: EdgeInsets.all(15),
-      );
+      });
     }
   }
 }

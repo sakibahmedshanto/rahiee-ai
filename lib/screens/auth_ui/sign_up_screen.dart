@@ -422,7 +422,7 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
         margin: EdgeInsets.all(15),
       );
     } else {
-      AuthResponse? authResponse =
+      Map<String, dynamic> result =
           await signUpController.signUpMethod(
         name,
         email,
@@ -432,32 +432,40 @@ class _SignUpScreenState extends State<SignUpScreen> with TickerProviderStateMix
         userDeviceToken,
       );
 
-      if (authResponse != null && authResponse.user != null) {
-        Get.snackbar(
-          "Success",
-          "Account created successfully! Please check your email for verification.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppConstant.successColor,
-          colorText: Colors.white,
-          borderRadius: 15,
-          margin: EdgeInsets.all(15),
-        );
-
-        // Sign out and redirect to sign-in
+      if (result['success'] == true) {
+        // Sign out to ensure clean state
         await Supabase.instance.client.auth.signOut();
-        Get.offAll(() => SignInScreen(),
-            transition: Transition.leftToRight,
-            duration: Duration(milliseconds: 300));
+        
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Get.snackbar(
+            "Success",
+            result['message'],
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppConstant.successColor,
+            colorText: Colors.white,
+            borderRadius: 15,
+            margin: EdgeInsets.all(15),
+            duration: Duration(seconds: 5), // Show longer since it's important
+          );
+          
+          // Navigate to sign-in screen
+          Get.offAll(() => SignInScreen(),
+              transition: Transition.leftToRight,
+              duration: Duration(milliseconds: 300));
+        });
       } else {
-        Get.snackbar(
-          "Error",
-          "Failed to create account. Please try again.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppConstant.errorColor,
-          colorText: Colors.white,
-          borderRadius: 15,
-          margin: EdgeInsets.all(15),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Get.snackbar(
+            "Error",
+            result['message'],
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppConstant.errorColor,
+            colorText: Colors.white,
+            borderRadius: 15,
+            margin: EdgeInsets.all(15),
+            duration: Duration(seconds: 4), // Show error longer for better readability
+          );
+        });
       }
     }
   }
