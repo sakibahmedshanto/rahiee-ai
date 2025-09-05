@@ -7,6 +7,7 @@ import '../../utils/app_constant.dart';
 import '../../controllers/landing_controller.dart';
 import '../schedule_screen/schedule_screen.dart';
 import '../schedule_screen/components/schedule_floating_action_button.dart';
+import '../profile_screen/profile_screen.dart';
 import 'components/landing_bottom_navigation.dart';
 
 class LandingScreen extends StatefulWidget {
@@ -48,7 +49,7 @@ class _LandingScreenState extends State<LandingScreen> {
             case 2:
               return _buildComingSoonScreen('Chat');
             case 3:
-              return _buildComingSoonScreen('Profile');
+              return const ProfileScreen();
             case 4:
               return _buildComingSoonScreen('More');
             default:
