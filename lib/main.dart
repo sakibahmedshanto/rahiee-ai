@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/supabase_service.dart';
 import 'services/schedule_service.dart';
+import 'services/attendance_management_service.dart';
+import 'services/location_permission_service.dart';
 import 'screens/auth_ui/splash_screen/splash_screen.dart';
 import 'screens/auth_ui/welcome_screen.dart';
 import 'screens/schedule_screen/schedule_screen.dart';
@@ -26,6 +28,8 @@ Future<void> main() async {
   // Initialize services
   Get.put(SupabaseService());
   Get.put(ScheduleService());
+  Get.put(AttendanceManagementService());
+  Get.put(LocationPermissionService());
   
   // Initialize theme controller
   Get.put(ThemeController());

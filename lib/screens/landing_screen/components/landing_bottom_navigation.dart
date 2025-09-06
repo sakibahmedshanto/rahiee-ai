@@ -47,8 +47,8 @@ class LandingBottomNavigation extends StatelessWidget {
               label: 'Schedule',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.access_time),
-              label: 'Time',
+              icon: Icon(Icons.login),
+              label: 'Attendance',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.chat_bubble_outline),

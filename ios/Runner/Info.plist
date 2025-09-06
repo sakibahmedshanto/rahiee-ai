@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Location permissions for attendance check-in -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs location access to verify your location when checking in for scheduled shifts.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs location access to verify your location when checking in for scheduled shifts.</string>
 </dict>
 </plist>

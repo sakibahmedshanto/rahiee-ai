@@ -25,6 +25,8 @@ class ScheduleModel {
   // Assignment history tracking
   final List<ScheduleAssignmentHistory>? assignmentHistory;
   
+  // No attendance fields - schedules are independent
+  
   ScheduleModel({
     required this.scheduleId,
     required this.title,
@@ -82,8 +84,7 @@ class ScheduleModel {
 
   // Convert to Supabase map
   Map<String, dynamic> toMap() {
-    return {
-      'id': scheduleId.isEmpty ? null : scheduleId, // Let Supabase generate if empty
+    final map = <String, dynamic>{
       'title': title,
       'description': description,
       'start_date_time': startDateTime.toIso8601String(),
@@ -105,6 +106,13 @@ class ScheduleModel {
       'custom_fields': customFields,
       'assignment_history': assignmentHistory?.map((e) => e.toMap()).toList(),
     };
+    
+    // Only include id if it's not empty (for updates)
+    if (scheduleId.isNotEmpty) {
+      map['id'] = scheduleId;
+    }
+    
+    return map;
   }
 
   // Copy with method for updates

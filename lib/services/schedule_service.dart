@@ -12,11 +12,16 @@ class ScheduleService extends GetxService {
   // Create a new schedule
   Future<bool> createSchedule(ScheduleModel schedule) async {
     try {
-      await _supabaseService.insert('employee_schedules', schedule.toMap());
+      print('🔄 Creating schedule with data:');
+      final scheduleData = schedule.toMap();
+      print('📋 Schedule data: $scheduleData');
+      
+      await _supabaseService.insert('employee_schedules', scheduleData);
       print('✅ Schedule created successfully: ${schedule.title}');
       return true;
     } catch (e) {
       print('❌ Error creating schedule: $e');
+      print('❌ Schedule data was: ${schedule.toMap()}');
       return false;
     }
   }
