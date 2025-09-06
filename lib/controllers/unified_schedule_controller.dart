@@ -116,50 +116,50 @@ class UnifiedScheduleController extends GetxController {
 
   Future<void> refreshData() async {
     await Future.wait([
-      _loadTodayAttendance(),
+      _loadCurrentAttendanceStatus(),
       loadSchedulesForDate(selectedDate.value),
     ]);
   }
 
-  Future<void> _loadTodayAttendance() async {
+  Future<void> _loadCurrentAttendanceStatus() async {
     try {
       if (currentUser.value == null) return;
       
-      // Get attendance for the specific date directly from database
+      // Use the database helper function to get attendance status
       final response = await _supabaseService.client
-        .from('attendance')
-        .select('*')
-        .eq('user_id', currentUser.value!.uId)
-        .gte('check_in_time', selectedDate.value.toIso8601String().split('T')[0])
-        .lt('check_in_time', DateTime(selectedDate.value.year, selectedDate.value.month, selectedDate.value.day + 1).toIso8601String().split('T')[0])
-        .order('check_in_time', ascending: false)
-        .limit(1);
+        .rpc('get_current_attendance_status', params: {
+          'p_employee_id': currentUser.value!.uId,
+          'p_date': DateTime.now().toIso8601String().split('T')[0], // YYYY-MM-DD format
+        });
       
-      if (response.isNotEmpty) {
-        final attendance = response.first;
-        hasCheckedIn.value = true;
-        hasCheckedOut.value = attendance['check_out_time'] != null;
-        currentAttendanceId.value = attendance['attendance_id'];
+      print('DEBUG: Attendance status response: $response');
+      
+      if (response != null && response['error'] != true) {
+        hasCheckedIn.value = response['has_checked_in'] ?? false;
+        hasCheckedOut.value = response['has_checked_out'] ?? false;
+        currentAttendanceId.value = response['attendance_id'];
         
-        if (attendance['check_in_time'] != null) {
-          checkInTime.value = DateTime.parse(attendance['check_in_time']);
+        if (response['check_in_time'] != null) {
+          checkInTime.value = DateTime.parse(response['check_in_time']);
         }
         
-        if (attendance['check_out_time'] != null) {
-          checkOutTime.value = DateTime.parse(attendance['check_out_time']);
+        if (response['check_out_time'] != null) {
+          checkOutTime.value = DateTime.parse(response['check_out_time']);
         }
         
-        // Calculate total hours if checked out
-        if (attendance['total_working_hours'] != null) {
-          final duration = Duration(seconds: attendance['total_working_hours']);
-          totalHours.value = duration.inHours.toDouble() + (duration.inMinutes % 60) / 60.0;
+        // Update total hours
+        if (response['total_hours'] != null) {
+          totalHours.value = (response['total_hours'] as num).toDouble();
         }
         
         // Find the active schedule if exists
-        if (attendance['schedule_id'] != null) {
-          _findActiveSchedule(attendance['schedule_id']);
+        if (response['schedule_id'] != null) {
+          _findActiveSchedule(response['schedule_id']);
         }
+        
+        print('DEBUG: Attendance loaded - CheckedIn: ${hasCheckedIn.value}, CheckedOut: ${hasCheckedOut.value}');
       } else {
+        print('DEBUG: No attendance record found or error occurred');
         _resetAttendanceStatus();
       }
     } catch (e) {
@@ -187,6 +187,53 @@ class UnifiedScheduleController extends GetxController {
     } catch (e) {
       print('Error finding active schedule: $e');
     }
+  }
+
+  // Helper methods for UI state
+  bool shouldShowCheckIn(ScheduleModel schedule) {
+    // Show check-in if:
+    // 1. User hasn't checked in today
+    // 2. Current time is within schedule time
+    if (hasCheckedIn.value) return false;
+    
+    final now = DateTime.now();
+    return now.isAfter(schedule.startDateTime.subtract(Duration(minutes: 30))) &&
+           now.isBefore(schedule.endDateTime);
+  }
+
+  bool shouldShowCheckOut() {
+    // Show check-out if user has checked in but not checked out
+    return hasCheckedIn.value && !hasCheckedOut.value;
+  }
+
+  bool shouldShowWorkSummary() {
+    // Show work summary if user has both checked in and checked out
+    return hasCheckedIn.value && hasCheckedOut.value;
+  }
+
+  String getAttendanceStatusText() {
+    if (shouldShowWorkSummary()) {
+      return 'Work Session Completed';
+    } else if (shouldShowCheckOut()) {
+      return 'Currently Working';
+    } else {
+      return 'Ready to Check In';
+    }
+  }
+
+  String getWorkDurationText() {
+    if (checkInTime.value != null && checkOutTime.value != null) {
+      final duration = checkOutTime.value!.difference(checkInTime.value!);
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes % 60;
+      return '${hours}h ${minutes}m';
+    } else if (checkInTime.value != null && !hasCheckedOut.value) {
+      final duration = DateTime.now().difference(checkInTime.value!);
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes % 60;
+      return '${hours}h ${minutes}m (ongoing)';
+    }
+    return '0h 0m';
   }
 
   Future<void> loadSchedulesForDate(DateTime date) async {
@@ -275,6 +322,8 @@ class UnifiedScheduleController extends GetxController {
         currentAttendanceId.value = result['attendance_id'];
         checkInTime.value = DateTime.now();
         
+        print('DEBUG: Check-in successful. AttendanceId: ${currentAttendanceId.value}');
+        
         // Success feedback
         Get.snackbar(
           'Success! 🎉',
@@ -315,8 +364,17 @@ class UnifiedScheduleController extends GetxController {
     try {
       isCheckingOut.value = true;
       
+      print('DEBUG: Attempting checkout with currentAttendanceId: ${currentAttendanceId.value}');
+      print('DEBUG: hasCheckedIn: ${hasCheckedIn.value}');
+      print('DEBUG: hasCheckedOut: ${hasCheckedOut.value}');
+      
       if (currentAttendanceId.value == null) {
-        throw Exception('No active attendance record found');
+        // Try to reload current attendance status before failing
+        await _loadCurrentAttendanceStatus();
+        
+        if (currentAttendanceId.value == null) {
+          throw Exception('No active attendance record found. Please check in first.');
+        }
       }
       
       Get.dialog(

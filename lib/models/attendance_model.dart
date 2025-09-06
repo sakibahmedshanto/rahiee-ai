@@ -92,27 +92,27 @@ class AttendanceModel {
   // Factory constructor from Supabase JSON
   factory AttendanceModel.fromJson(Map<String, dynamic> data) {
     return AttendanceModel(
-      attendanceId: data['attendance_id'] ?? '',
-      userId: data['user_id'] ?? '',
+      attendanceId: data['id'] ?? '',
+      userId: data['employee_id'] ?? '',
       scheduleId: data['schedule_id'] ?? '',
       checkInTime: DateTime.parse(data['check_in_time']),
       checkOutTime: data['check_out_time'] != null 
           ? DateTime.parse(data['check_out_time'])
           : null,
       status: data['status'] ?? 'pending_checkout',
-      totalWorkingHours: data['total_working_hours'] != null
-          ? Duration(milliseconds: data['total_working_hours'])
+      totalWorkingHours: data['total_hours'] != null
+          ? Duration(hours: (data['total_hours'] as num).toInt())
           : null,
       checkInPhotoUrl: data['check_in_photo_url'],
-      checkInLatitude: data['check_in_latitude']?.toDouble(),
-      checkInLongitude: data['check_in_longitude']?.toDouble(),
+      checkInLatitude: data['check_in_location_lat']?.toDouble(),
+      checkInLongitude: data['check_in_location_lng']?.toDouble(),
       checkInAddress: data['check_in_address'],
       mlCheckInResults: data['ml_check_in_results'],
       uniformDetected: data['uniform_detected'] ?? false,
       uniformConfidence: data['uniform_confidence']?.toDouble(),
       checkOutPhotoUrl: data['check_out_photo_url'],
-      checkOutLatitude: data['check_out_latitude']?.toDouble(),
-      checkOutLongitude: data['check_out_longitude']?.toDouble(),
+      checkOutLatitude: data['check_out_location_lat']?.toDouble(),
+      checkOutLongitude: data['check_out_location_lng']?.toDouble(),
       checkOutAddress: data['check_out_address'],
       mlCheckOutResults: data['ml_check_out_results'],
       isUnusual: data['is_unusual'] ?? false,
@@ -149,23 +149,23 @@ class AttendanceModel {
   // Convert to Supabase JSON
   Map<String, dynamic> toJson() {
     return {
-      'attendance_id': attendanceId,
-      'user_id': userId,
+      'id': attendanceId,
+      'employee_id': userId,
       'schedule_id': scheduleId,
       'check_in_time': checkInTime.toIso8601String(),
       'check_out_time': checkOutTime?.toIso8601String(),
       'status': status,
-      'total_working_hours': totalWorkingHours?.inMilliseconds,
+      'total_hours': totalWorkingHours?.inHours,
       'check_in_photo_url': checkInPhotoUrl,
-      'check_in_latitude': checkInLatitude,
-      'check_in_longitude': checkInLongitude,
+      'check_in_location_lat': checkInLatitude,
+      'check_in_location_lng': checkInLongitude,
       'check_in_address': checkInAddress,
       'ml_check_in_results': mlCheckInResults,
       'uniform_detected': uniformDetected,
       'uniform_confidence': uniformConfidence,
       'check_out_photo_url': checkOutPhotoUrl,
-      'check_out_latitude': checkOutLatitude,
-      'check_out_longitude': checkOutLongitude,
+      'check_out_location_lat': checkOutLatitude,
+      'check_out_location_lng': checkOutLongitude,
       'check_out_address': checkOutAddress,
       'ml_check_out_results': mlCheckOutResults,
       'is_unusual': isUnusual,

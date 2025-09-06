@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/unified_schedule_controller.dart';
 import '../models/schedule_model.dart';
-import '../models/attendance_model.dart';
 import '../utils/app_constant.dart';
 
 class UnifiedScheduleScreen extends StatelessWidget {
@@ -80,25 +79,28 @@ class UnifiedScheduleScreen extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
-            colors: [
-              AppConstant.primaryColor,
-              AppConstant.primaryColor.withOpacity(0.8),
-            ],
+            colors: controller.shouldShowWorkSummary()
+                ? [AppConstant.successColor, AppConstant.successColor.withOpacity(0.8)]
+                : controller.shouldShowCheckOut()
+                    ? [AppConstant.warningColor, AppConstant.warningColor.withOpacity(0.8)]
+                    : [AppConstant.primaryColor, AppConstant.primaryColor.withOpacity(0.8)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: Obx(() {
-          final todayAttendance = null; // Will be implemented
-          final isCheckedIn = controller.isCheckedIn.value;
-          
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header Row
               Row(
                 children: [
                   Icon(
-                    isCheckedIn ? Icons.work : Icons.work_outline,
+                    controller.shouldShowWorkSummary()
+                        ? Icons.check_circle
+                        : controller.shouldShowCheckOut()
+                            ? Icons.work
+                            : Icons.work_outline,
                     color: Colors.white,
                     size: 28,
                   ),
@@ -108,17 +110,17 @@ class UnifiedScheduleScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isCheckedIn ? 'You\'re Checked In' : 'Ready to Start Work?',
+                          controller.getAttendanceStatusText(),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (isCheckedIn && controller.activeSchedule.value != null) ...[
+                        if (controller.activeSchedule.value != null) ...[
                           const SizedBox(height: 4),
                           Text(
-                            'Working on: ${controller.activeSchedule.value!.title}',
+                            'Schedule: ${controller.activeSchedule.value!.title}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.9),
                               fontSize: 14,
@@ -132,64 +134,21 @@ class UnifiedScheduleScreen extends StatelessWidget {
                 ],
               ),
               
-              if (todayAttendance != null) ...[
-                const SizedBox(height: 16),
-                _buildAttendanceDetails(todayAttendance),
-              ] else if (isCheckedIn) ...[
-                const SizedBox(height: 16),
+              const SizedBox(height: 16),
+              
+              // Work Session Details
+              if (controller.shouldShowWorkSummary()) ...[
+                _buildWorkSummaryDetails(controller),
+              ] else if (controller.shouldShowCheckOut()) ...[
                 _buildCurrentWorkDetails(controller),
+              ] else ...[
+                _buildReadyToWorkDetails(controller),
               ],
               
               const SizedBox(height: 20),
               
               // Action Buttons
-              Row(
-                children: [
-                  if (!isCheckedIn && controller.todaySchedules.isNotEmpty) ...[
-                    Expanded(
-                      child: _buildActionButton(
-                        text: 'Check In',
-                        icon: Icons.login,
-                        onPressed: controller.isCheckingIn.value
-                            ? null
-                            : () => _showCheckInDialog(controller, controller.todaySchedules.first),
-                        isLoading: controller.isCheckingIn.value,
-                        backgroundColor: AppConstant.successColor,
-                      ),
-                    ),
-                  ] else if (!isCheckedIn) ...[
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppConstant.textSecondary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'No schedules available for check-in',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppConstant.textSecondary,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ] else ...[
-                    Expanded(
-                      child: _buildActionButton(
-                        text: 'Check Out',
-                        icon: Icons.logout,
-                        onPressed: controller.isCheckingOut.value
-                            ? null
-                            : () => _showCheckOutConfirmation(controller),
-                        isLoading: controller.isCheckingOut.value,
-                        backgroundColor: AppConstant.errorColor,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+              _buildActionButtons(controller),
             ],
           );
         }),
@@ -197,9 +156,9 @@ class UnifiedScheduleScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAttendanceDetails(AttendanceModel attendance) {
+  Widget _buildWorkSummaryDetails(UnifiedScheduleController controller) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
@@ -207,46 +166,311 @@ class UnifiedScheduleScreen extends StatelessWidget {
       child: Column(
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.schedule, color: Colors.white70, size: 16),
-              const SizedBox(width: 8),
               Text(
-                'Checked in at: ${DateFormat('HH:mm').format(attendance.checkInTime)}',
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                'Check-in Time:',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                controller.checkInTime.value != null
+                    ? DateFormat('hh:mm a').format(controller.checkInTime.value!)
+                    : '--:--',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
-          if (attendance.checkOutTime != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.schedule_outlined, color: Colors.white70, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Checked out at: ${DateFormat('HH:mm').format(attendance.checkOutTime!)}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Check-out Time:',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.timer, color: Colors.white70, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Total hours: ${attendance.totalWorkingHours?.inHours.toDouble().toStringAsFixed(2) ?? '0.00'}h',
+              ),
+              Text(
+                controller.checkOutTime.value != null
+                    ? DateFormat('hh:mm a').format(controller.checkOutTime.value!)
+                    : '--:--',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total Duration:',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                controller.getWorkDurationText(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurrentWorkDetails(UnifiedScheduleController controller) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Started At:',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                controller.checkInTime.value != null
+                    ? DateFormat('hh:mm a').format(controller.checkInTime.value!)
+                    : '--:--',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Duration:',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                controller.getWorkDurationText(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadyToWorkDetails(UnifiedScheduleController controller) {
+    if (controller.todaySchedules.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'No schedules available today. Check back later!',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+          ),
+        ),
+      );
+    }
+
+    final nextSchedule = controller.todaySchedules.first;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Next Schedule:',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                DateFormat('hh:mm a').format(nextSchedule.startDateTime),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Location:',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                ),
+              ),
+              Flexible(
+                child: Text(
+                  nextSchedule.location,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
+                  textAlign: TextAlign.right,
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildActionButtons(UnifiedScheduleController controller) {
+    if (controller.shouldShowWorkSummary()) {
+      // Show completed work message
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text(
+              'Work session completed for today',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (controller.shouldShowCheckOut()) {
+      // Show checkout button
+      return Row(
+        children: [
+          Expanded(
+            child: _buildActionButton(
+              text: 'Check Out',
+              icon: Icons.logout,
+              onPressed: controller.isCheckingOut.value
+                  ? null
+                  : () => _showCheckOutConfirmation(controller),
+              isLoading: controller.isCheckingOut.value,
+              backgroundColor: AppConstant.errorColor,
+            ),
+          ),
+        ],
+      );
+    } else {
+      // Show check-in options based on schedules
+      if (controller.todaySchedules.isEmpty) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            'No schedules available for check-in today',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+        );
+      }
+
+      // Check if any schedule is available for check-in
+      final availableSchedules = controller.todaySchedules
+          .where((schedule) => controller.shouldShowCheckIn(schedule))
+          .toList();
+
+      if (availableSchedules.isEmpty) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            'Check-in will be available when your schedule starts',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+        );
+      }
+
+      return Row(
+        children: [
+          Expanded(
+            child: _buildActionButton(
+              text: 'Check In',
+              icon: Icons.login,
+              onPressed: controller.isCheckingIn.value
+                  ? null
+                  : () => _showCheckInDialog(controller, availableSchedules.first),
+              isLoading: controller.isCheckingIn.value,
+              backgroundColor: AppConstant.successColor,
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildActionButton({
@@ -977,64 +1201,5 @@ class UnifiedScheduleScreen extends StatelessWidget {
     } else {
       return '${minutes}m';
     }
-  }
-
-  Widget _buildCurrentWorkDetails(UnifiedScheduleController controller) {
-    final checkInTime = controller.checkInTime.value;
-    final activeSchedule = controller.activeSchedule.value;
-    
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          if (checkInTime != null) ...[
-            Row(
-              children: [
-                const Icon(Icons.schedule, color: Colors.white70, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Started work at: ${DateFormat('HH:mm').format(checkInTime)}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.timer, color: Colors.white, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Working for: ${_formatDuration(DateTime.now().difference(checkInTime))}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (activeSchedule != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.location_on, color: Colors.white70, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Location: ${activeSchedule.location}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
   }
 }
