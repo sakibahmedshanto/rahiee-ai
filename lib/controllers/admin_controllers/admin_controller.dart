@@ -215,117 +215,199 @@ class AdminController extends GetxController {
     filteredEmployees.value = filtered;
   }
 
-  // Attendance Management - Using correct foreign key relationship
+  // Attendance Management - Using new RPC functions
   Future<void> loadPendingAttendance() async {
     try {
-      var query = _supabase
-          .from('attendance')
-          .select('''
-            *,
-            employee:my_users!attendance_employee_id_fkey(
-              full_name,
-              employee_id,
-              user_img,
-              department,
-              position
-            )
-          ''')
-          .eq('status', 'pending');
-
-      // Apply date filtering
-      query = _applyDateFilter(query);
-
-      final response = await query.order('check_in_time', ascending: false);
-
-      final attendanceList = <AttendanceModel>[];
-      for (final item in response as List) {
-        try {
-          final attendance = AttendanceModel.fromJson(item);
-          attendanceList.add(attendance);
-          // Store raw data with employee info for UI access
-          attendanceRawData[attendance.attendanceId] = item as Map<String, dynamic>;
-        } catch (e) {
-          print('Error parsing attendance item: $e');
-          print('Item data: $item');
-          // Skip problematic items and continue
-        }
-      }
+      isLoading.value = true;
       
-      pendingAttendance.value = attendanceList;
-      totalPendingApprovals.value = attendanceList.length;
+      final response = await _supabase.rpc('get_admin_attendance_records', params: {
+        'p_date_filter': dateFilterType.value,
+        'p_start_date': selectedStartDate.value?.toIso8601String().split('T')[0],
+        'p_end_date': selectedEndDate.value?.toIso8601String().split('T')[0],
+        'p_status_filter': 'pending',
+        'p_department_filter': selectedDepartment.value == 'All' ? 'all' : selectedDepartment.value,
+        'p_limit': 100,
+        'p_offset': 0,
+      });
+
+      if (response != null && response['success'] == true) {
+        final List<dynamic> attendanceData = response['data'] ?? [];
+        final attendanceList = <AttendanceModel>[];
+        
+        // Clear previous raw data
+        attendanceRawData.clear();
+        
+        for (final item in attendanceData) {
+          try {
+            // Store raw data for UI access
+            attendanceRawData[item['attendance_id']] = Map<String, dynamic>.from(item);
+            
+            // Create AttendanceModel from the data
+            final attendance = AttendanceModel.fromJson({
+              'id': item['attendance_id'],
+              'user_id': item['employee']['id'],
+              'date': item['date'],
+              'check_in_time': item['check_in_time'],
+              'check_out_time': item['check_out_time'],
+              'total_work_hours': item['total_work_hours'],
+              'overtime_hours': item['overtime_hours'],
+              'status': item['status'],
+              'employee_notes': item['employee_notes'],
+              'admin_notes': item['admin_notes'],
+              'created_at': item['created_at'],
+              'updated_at': item['updated_at'],
+              'schedule_id': item['schedule']?['id'],
+              'work_type': item['work_type'],
+              'shift_type': item['shift_type'],
+              'is_late': item['is_late'],
+              'is_early_departure': item['is_early_departure'],
+              'expected_hours': item['expected_hours'],
+              'total_hours': item['total_hours'],
+              'break_duration': item['break_duration'],
+            });
+            attendanceList.add(attendance);
+          } catch (e) {
+            print('Error parsing attendance item: $e');
+            print('Item data: $item');
+          }
+        }
+        
+        pendingAttendance.value = attendanceList;
+        totalPendingApprovals.value = attendanceList.length;
+      } else {
+        throw Exception(response?['message'] ?? 'Failed to load attendance records');
+      }
     } catch (e) {
       print('Error loading pending attendance: $e');
       errorMessage.value = 'Failed to load pending attendance';
-      // Set empty list on error to prevent UI issues
       pendingAttendance.value = [];
       totalPendingApprovals.value = 0;
+    } finally {
+      isLoading.value = false;
     }
   }
 
   Future<void> loadAllAttendance() async {
     try {
-      var query = _supabase
-          .from('attendance')
-          .select('''
-            *,
-            employee:my_users!attendance_employee_id_fkey(
-              full_name,
-              employee_id,
-              user_img,
-              department,
-              position
-            )
-          ''');
-
-      // Apply date filtering
-      query = _applyDateFilter(query);
-
-      final response = await query
-          .order('check_in_time', ascending: false)
-          .limit(100); // Limit to recent 100 records
-
-      final attendanceList = <AttendanceModel>[];
-      for (final item in response as List) {
-        try {
-          final attendance = AttendanceModel.fromJson(item);
-          attendanceList.add(attendance);
-          // Store raw data with employee info for UI access
-          attendanceRawData[attendance.attendanceId] = item as Map<String, dynamic>;
-        } catch (e) {
-          print('Error parsing attendance item: $e');
-          print('Item data: $item');
-          // Skip problematic items and continue
-        }
-      }
+      isLoading.value = true;
       
-      allAttendance.value = attendanceList;
+      final response = await _supabase.rpc('get_admin_attendance_records', params: {
+        'p_date_filter': dateFilterType.value,
+        'p_start_date': selectedStartDate.value?.toIso8601String().split('T')[0],
+        'p_end_date': selectedEndDate.value?.toIso8601String().split('T')[0],
+        'p_status_filter': 'all',
+        'p_department_filter': selectedDepartment.value == 'All' ? 'all' : selectedDepartment.value,
+        'p_limit': 100,
+        'p_offset': 0,
+      });
+
+      if (response != null && response['success'] == true) {
+        final List<dynamic> attendanceData = response['data'] ?? [];
+        final attendanceList = <AttendanceModel>[];
+        
+        // Clear previous raw data
+        attendanceRawData.clear();
+        
+        for (final item in attendanceData) {
+          try {
+            // Store raw data for UI access
+            attendanceRawData[item['attendance_id']] = Map<String, dynamic>.from(item);
+            
+            // Create AttendanceModel from the data
+            final attendance = AttendanceModel.fromJson({
+              'id': item['attendance_id'],
+              'user_id': item['employee']['id'],
+              'date': item['date'],
+              'check_in_time': item['check_in_time'],
+              'check_out_time': item['check_out_time'],
+              'total_work_hours': item['total_work_hours'],
+              'overtime_hours': item['overtime_hours'],
+              'status': item['status'],
+              'employee_notes': item['employee_notes'],
+              'admin_notes': item['admin_notes'],
+              'created_at': item['created_at'],
+              'updated_at': item['updated_at'],
+              'schedule_id': item['schedule']?['id'],
+              'work_type': item['work_type'],
+              'shift_type': item['shift_type'],
+              'is_late': item['is_late'],
+              'is_early_departure': item['is_early_departure'],
+              'expected_hours': item['expected_hours'],
+              'total_hours': item['total_hours'],
+              'break_duration': item['break_duration'],
+            });
+            attendanceList.add(attendance);
+          } catch (e) {
+            print('Error parsing attendance item: $e');
+            print('Item data: $item');
+          }
+        }
+        
+        allAttendance.value = attendanceList;
+      } else {
+        throw Exception(response?['message'] ?? 'Failed to load attendance records');
+      }
     } catch (e) {
       print('Error loading all attendance: $e');
       errorMessage.value = 'Failed to load attendance records';
-      // Set empty list on error to prevent UI issues
       allAttendance.value = [];
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  // Helper method to apply date filtering to queries
-  dynamic _applyDateFilter(dynamic query) {
-    switch (dateFilterType.value) {
-      case 'today':
-        final today = DateTime.now().toIso8601String().split('T')[0];
-        return query.eq('date', today);
-      case 'range':
-        if (selectedStartDate.value != null && selectedEndDate.value != null) {
-          return query
-              .gte('date', selectedStartDate.value!.toIso8601String().split('T')[0])
-              .lte('date', selectedEndDate.value!.toIso8601String().split('T')[0]);
-        }
-        break;
-      case 'all':
-      default:
-        // No additional filtering for 'all'
-        break;
+  // New method to approve/reject attendance
+  Future<bool> reviewAttendance({
+    required String attendanceId,
+    required String action, // 'approve' or 'reject'
+    String? adminNotes,
+    String? reviewReason,
+  }) async {
+    try {
+      // Get current admin user ID (you might need to adjust this based on your auth system)
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('Admin not authenticated');
+      }
+
+      final response = await _supabase.rpc('admin_review_attendance', params: {
+        'p_attendance_id': attendanceId,
+        'p_admin_id': currentUser.id,
+        'p_action': action,
+        'p_admin_notes': adminNotes,
+        'p_review_reason': reviewReason,
+      });
+
+      if (response != null && response['success'] == true) {
+        // Refresh attendance data
+        refreshAttendanceData();
+        return true;
+      } else {
+        throw Exception(response?['message'] ?? 'Failed to review attendance');
+      }
+    } catch (e) {
+      print('Error reviewing attendance: $e');
+      errorMessage.value = 'Failed to review attendance: $e';
+      return false;
     }
-    return query;
+  }
+
+  // Helper method to get employee data for an attendance record
+  Map<String, dynamic>? getEmployeeDataForAttendance(String attendanceId) {
+    final rawData = attendanceRawData[attendanceId];
+    return rawData?['employee'];
+  }
+
+  // Helper method to get schedule data for an attendance record
+  Map<String, dynamic>? getScheduleDataForAttendance(String attendanceId) {
+    final rawData = attendanceRawData[attendanceId];
+    return rawData?['schedule'];
+  }
+
+  // Helper method to get status info for an attendance record
+  Map<String, dynamic>? getStatusInfoForAttendance(String attendanceId) {
+    final rawData = attendanceRawData[attendanceId];
+    return rawData?['status_info'];
   }
 
   // Date filter methods
@@ -588,14 +670,5 @@ class AdminController extends GetxController {
     } finally {
       isLoading.value = false;
     }
-  }
-
-  // Helper method to get employee data for attendance record
-  Map<String, dynamic>? getEmployeeDataForAttendance(String attendanceId) {
-    final rawData = attendanceRawData[attendanceId];
-    if (rawData != null && rawData.containsKey('employee')) {
-      return rawData['employee'] as Map<String, dynamic>?;
-    }
-    return null;
   }
 }

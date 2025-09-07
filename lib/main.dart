@@ -9,7 +9,7 @@ import 'services/location_permission_service.dart';
 import 'screens/auth_ui/splash_screen/splash_screen.dart';
 import 'screens/auth_ui/welcome_screen.dart';
 import 'screens/schedule_screen/schedule_screen.dart';
-import 'screens/admin_screen/admin_screen.dart';
+import 'screens/admin/admin_screen/new_admin_screen.dart';
 import 'screens/auth_ui/sign_in_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
