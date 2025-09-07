@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../utils/app_constant.dart';
-import '../../../controllers/splash_controller.dart';
+import '../../../controllers/auth_controller/splash_controller.dart';
 import 'components/animated_logo.dart';
 import 'components/animated_loading_text.dart';
 import 'components/splash_bottom_content.dart';

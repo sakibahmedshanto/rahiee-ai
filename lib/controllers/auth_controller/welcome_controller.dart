@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'auth_controller/google_sign_in_controller.dart';
-import '../screens/auth_ui/sign_in_screen.dart';
-import '../utils/app_constant.dart';
+import 'google_sign_in_controller.dart';
+import '../../screens/auth_ui/sign_in_screen.dart';
+import '../../utils/app_constant.dart';
 
 class WelcomeController extends GetxController with GetTickerProviderStateMixin {
   final GoogleSignInController googleSignInController = Get.put(GoogleSignInController());

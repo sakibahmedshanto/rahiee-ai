@@ -4,11 +4,11 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/user_model.dart';
-import '../services/supabase_service.dart';
-import 'auth_controller/get_user_data_controller.dart';
-import '../screens/landing_screen/landing_screen.dart';
-import '../screens/auth_ui/welcome_screen.dart';
+import '../../models/user_model.dart';
+import '../../services/supabase_service.dart';
+import 'get_user_data_controller.dart';
+import '../../screens/landing_screen/landing_screen.dart';
+import '../../screens/auth_ui/welcome_screen.dart';
 
 class SplashController extends GetxController {
   final RxBool isLoading = true.obs;

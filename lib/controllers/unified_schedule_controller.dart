@@ -30,6 +30,9 @@ class UnifiedScheduleController extends GetxController {
   final currentAttendanceId = Rxn<String>();
   final activeSchedule = Rxn<ScheduleModel>();
   
+  // Store attendance status for each schedule
+  final scheduleAttendanceStatus = <String, Map<String, dynamic>>{}.obs;
+  
   // Additional computed properties for UI
   List<ScheduleModel> get todaySchedules => schedules.where((schedule) {
     final selectedDate = this.selectedDate.value;
@@ -50,17 +53,87 @@ class UnifiedScheduleController extends GetxController {
 
   // Check if user is checked in for a specific schedule
   bool isCheckedInForSchedule(ScheduleModel schedule) {
-    return hasCheckedIn.value && 
-           activeSchedule.value?.scheduleId == schedule.scheduleId;
+    final status = scheduleAttendanceStatus[schedule.scheduleId];
+    return status != null && (status['has_checked_in'] ?? false);
   }
 
-  // Check if user can check in for a schedule (not already checked in for another schedule)
+  // Check if user is checked out for a specific schedule
+  bool isCheckedOutForSchedule(ScheduleModel schedule) {
+    final status = scheduleAttendanceStatus[schedule.scheduleId];
+    return status != null && (status['has_checked_out'] ?? false);
+  }
+
+  // Check if schedule is completed
+  bool isScheduleCompleted(ScheduleModel schedule) {
+    final status = scheduleAttendanceStatus[schedule.scheduleId];
+    return status != null && 
+           (status['has_checked_in'] ?? false) && 
+           (status['has_checked_out'] ?? false);
+  }
+
+  // Get attendance status for a schedule
+  Map<String, dynamic>? getScheduleAttendanceStatus(ScheduleModel schedule) {
+    return scheduleAttendanceStatus[schedule.scheduleId];
+  }
+
+  // Check if user can check in for a schedule
   bool canCheckInForSchedule(ScheduleModel schedule) {
     final isToday = selectedDate.value.year == DateTime.now().year &&
                    selectedDate.value.month == DateTime.now().month &&
                    selectedDate.value.day == DateTime.now().day;
     
-    return isToday && (!hasCheckedIn.value || hasCheckedOut.value);
+    if (!isToday) return false;
+    
+    final status = scheduleAttendanceStatus[schedule.scheduleId];
+    return status == null || !(status['has_checked_in'] ?? false);
+  }
+
+  // Check if user can check out for a schedule
+  bool canCheckOutForSchedule(ScheduleModel schedule) {
+    final status = scheduleAttendanceStatus[schedule.scheduleId];
+    return status != null && 
+           (status['has_checked_in'] ?? false) && 
+           !(status['has_checked_out'] ?? false);
+  }
+
+  // Get work status text for a schedule
+  String getScheduleWorkStatus(ScheduleModel schedule) {
+    final status = scheduleAttendanceStatus[schedule.scheduleId];
+    if (status == null) return 'Not Started';
+    
+    final hasCheckedIn = status['has_checked_in'] ?? false;
+    final hasCheckedOut = status['has_checked_out'] ?? false;
+    
+    if (hasCheckedIn && hasCheckedOut) {
+      return 'Completed';
+    } else if (hasCheckedIn) {
+      return 'In Progress';
+    } else {
+      return 'Not Started';
+    }
+  }
+
+  // Check if user should be asked to check out (has any active attendance)
+  bool get hasActiveAttendance {
+    for (final status in scheduleAttendanceStatus.values) {
+      if ((status['has_checked_in'] ?? false) && !(status['has_checked_out'] ?? false)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Get the active schedule (if any)
+  ScheduleModel? get currentActiveSchedule {
+    for (final schedule in schedules) {
+      final status = scheduleAttendanceStatus[schedule.scheduleId];
+      if (status != null && 
+          (status['has_checked_in'] ?? false) && 
+          !(status['has_checked_out'] ?? false)) {
+        return schedule;
+      }
+    }
+    return null;
   }
   
   // Date navigation methods
@@ -115,55 +188,93 @@ class UnifiedScheduleController extends GetxController {
   }
 
   Future<void> refreshData() async {
-    await Future.wait([
-      _loadCurrentAttendanceStatus(),
-      loadSchedulesForDate(selectedDate.value),
-    ]);
+    // Load schedules first, then attendance status will be loaded automatically
+    await loadSchedulesForDate(selectedDate.value);
   }
 
   Future<void> _loadCurrentAttendanceStatus() async {
     try {
       if (currentUser.value == null) return;
       
-      // Use the database helper function to get attendance status
-      final response = await _supabaseService.client
-        .rpc('get_current_attendance_status', params: {
-          'p_employee_id': currentUser.value!.uId,
-          'p_date': DateTime.now().toIso8601String().split('T')[0], // YYYY-MM-DD format
-        });
+      // Load attendance status for all schedules for the selected date
+      final response = await _attendanceService.getSchedulesWithAttendanceStatus(
+        date: selectedDate.value,
+        employeeId: currentUser.value!.uId,
+      );
       
-      print('DEBUG: Attendance status response: $response');
+      print('DEBUG: Schedules with attendance response: $response');
       
-      if (response != null && response['error'] != true) {
-        hasCheckedIn.value = response['has_checked_in'] ?? false;
-        hasCheckedOut.value = response['has_checked_out'] ?? false;
-        currentAttendanceId.value = response['attendance_id'];
+      if (response['error'] != true && response['schedules'] != null) {
+        final List<dynamic> schedulesData = response['schedules'];
         
-        if (response['check_in_time'] != null) {
-          checkInTime.value = DateTime.parse(response['check_in_time']);
+        // Clear previous status
+        scheduleAttendanceStatus.clear();
+        hasCheckedIn.value = false;
+        hasCheckedOut.value = false;
+        currentAttendanceId.value = null;
+        activeSchedule.value = null;
+        
+        // Process each schedule's attendance status
+        for (final scheduleData in schedulesData) {
+          final scheduleId = scheduleData['schedule_id']?.toString();
+          if (scheduleId != null) {
+            scheduleAttendanceStatus[scheduleId] = Map<String, dynamic>.from(scheduleData);
+            
+            // Update global status for backward compatibility (use most recent active attendance)
+            if (scheduleData['has_checked_in'] == true) {
+              hasCheckedIn.value = true;
+              if (scheduleData['attendance_id'] != null) {
+                currentAttendanceId.value = scheduleData['attendance_id'].toString();
+              }
+              
+              if (scheduleData['check_in_time'] != null) {
+                checkInTime.value = DateTime.parse(scheduleData['check_in_time']);
+              }
+              
+              // If this schedule is not checked out, it's the active one
+              if (scheduleData['has_checked_out'] != true) {
+                hasCheckedOut.value = false;
+                // Find the corresponding schedule model
+                final schedule = schedules.firstWhereOrNull(
+                  (s) => s.scheduleId == scheduleId
+                );
+                if (schedule != null) {
+                  activeSchedule.value = schedule;
+                }
+              } else if (scheduleData['check_out_time'] != null) {
+                checkOutTime.value = DateTime.parse(scheduleData['check_out_time']);
+              }
+            }
+          }
         }
         
-        if (response['check_out_time'] != null) {
-          checkOutTime.value = DateTime.parse(response['check_out_time']);
+        // If all checked-in schedules are also checked out, update global status
+        bool allCompleted = true;
+        bool hasAnyCheckedIn = false;
+        for (final status in scheduleAttendanceStatus.values) {
+          if (status['has_checked_in'] == true) {
+            hasAnyCheckedIn = true;
+            if (status['has_checked_out'] != true) {
+              allCompleted = false;
+              break;
+            }
+          }
         }
         
-        // Update total hours
-        if (response['total_hours'] != null) {
-          totalHours.value = (response['total_hours'] as num).toDouble();
+        if (hasAnyCheckedIn && allCompleted) {
+          hasCheckedOut.value = true;
+          activeSchedule.value = null;
         }
         
-        // Find the active schedule if exists
-        if (response['schedule_id'] != null) {
-          _findActiveSchedule(response['schedule_id']);
-        }
-        
-        print('DEBUG: Attendance loaded - CheckedIn: ${hasCheckedIn.value}, CheckedOut: ${hasCheckedOut.value}');
       } else {
-        print('DEBUG: No attendance record found or error occurred');
+        print('DEBUG: Error loading attendance status: ${response['message']}');
+        // Reset status on error
         _resetAttendanceStatus();
       }
+      
     } catch (e) {
-      print('Error loading attendance: $e');
+      print('Error loading current attendance status: $e');
+      // Reset status on error
       _resetAttendanceStatus();
     }
   }
@@ -176,17 +287,7 @@ class UnifiedScheduleController extends GetxController {
     totalHours.value = 0.0;
     currentAttendanceId.value = null;
     activeSchedule.value = null;
-  }
-
-  Future<void> _findActiveSchedule(String scheduleId) async {
-    try {
-      final schedule = schedules.firstWhereOrNull(
-        (s) => s.scheduleId == scheduleId,
-      );
-      activeSchedule.value = schedule;
-    } catch (e) {
-      print('Error finding active schedule: $e');
-    }
+    scheduleAttendanceStatus.clear();
   }
 
   // Helper methods for UI state
@@ -268,6 +369,9 @@ class UnifiedScheduleController extends GetxController {
       
       schedules.value = loadedSchedules;
       
+      // After loading schedules, load their attendance status
+      await _loadCurrentAttendanceStatus();
+      
     } catch (e) {
       print('Error loading schedules: $e');
       Get.snackbar(
@@ -284,6 +388,24 @@ class UnifiedScheduleController extends GetxController {
   Future<void> checkInForSchedule(ScheduleModel schedule) async {
     try {
       isCheckingIn.value = true;
+      
+      // First check if user can check in for this schedule
+      final canCheckIn = await _attendanceService.canCheckInForSchedule(
+        scheduleId: schedule.scheduleId,
+        date: selectedDate.value,
+      );
+      
+      if (canCheckIn['error'] == true || canCheckIn['can_check_in'] != true) {
+        Get.snackbar(
+          'Cannot Check In',
+          canCheckIn['message'] ?? 'Unable to check in for this schedule',
+          backgroundColor: AppConstant.warningColor,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
       
       Get.dialog(
         const Center(
@@ -317,13 +439,6 @@ class UnifiedScheduleController extends GetxController {
       Get.back(); // Close loading dialog
 
       if (result['success'] == true) {
-        // Update attendance status immediately
-        hasCheckedIn.value = true;
-        currentAttendanceId.value = result['attendance_id'];
-        checkInTime.value = DateTime.now();
-        
-        print('DEBUG: Check-in successful. AttendanceId: ${currentAttendanceId.value}');
-        
         // Success feedback
         Get.snackbar(
           'Success! 🎉',
@@ -357,6 +472,90 @@ class UnifiedScheduleController extends GetxController {
       );
     } finally {
       isCheckingIn.value = false;
+    }
+  }
+
+  Future<void> checkOutForSchedule(ScheduleModel schedule) async {
+    try {
+      isCheckingOut.value = true;
+      
+      // Get attendance status for this specific schedule
+      final attendanceStatus = scheduleAttendanceStatus[schedule.scheduleId];
+      if (attendanceStatus == null || attendanceStatus['attendance_id'] == null) {
+        Get.snackbar(
+          'Error',
+          'No active attendance found for this schedule',
+          backgroundColor: AppConstant.errorColor,
+          colorText: Colors.white,
+        );
+        return;
+      }
+      
+      final attendanceId = attendanceStatus['attendance_id'].toString();
+      
+      Get.dialog(
+        const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Checking you out...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+        barrierDismissible: false,
+      );
+
+      // Get current location
+      final location = await _locationService.getCurrentLocation();
+      
+      final result = await _attendanceService.clockOut(
+        attendanceId: attendanceId,
+        latitude: location?.latitude ?? 0.0,
+        longitude: location?.longitude ?? 0.0,
+        address: 'Work Location',
+      );
+
+      Get.back(); // Close loading dialog
+
+      if (result['success'] == true) {
+        final hours = result['total_hours']?.toDouble() ?? 0.0;
+        
+        // Success feedback with work summary
+        Get.snackbar(
+          'Great Work! 🎉',
+          'You completed ${schedule.title} - ${hours.toStringAsFixed(2)} hours worked',
+          backgroundColor: AppConstant.successColor,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+          snackPosition: SnackPosition.TOP,
+        );
+        
+        // Refresh data to update UI
+        await refreshData();
+        
+      } else {
+        throw Exception(result['message'] ?? 'Check-out failed');
+      }
+      
+    } catch (e) {
+      print('Error checking out: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to check out: $e',
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        snackPosition: SnackPosition.TOP,
+      );
+    } finally {
+      isCheckingOut.value = false;
     }
   }
 
