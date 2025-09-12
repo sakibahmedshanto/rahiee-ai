@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/admin/admin_dashboard_model.dart';
@@ -7,6 +9,7 @@ import '../../models/admin/schedule_coverage_model.dart';
 import '../../models/user_model.dart';
 import '../../models/attendance_model.dart';
 import '../../models/schedule_model.dart';
+import '../../utils/app_constant.dart';
 
 class AdminController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -669,6 +672,74 @@ class AdminController extends GetxController {
       errorMessage.value = 'Failed to load summary data';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Admin logout method
+  Future<void> onLogoutPressed() async {
+    try {
+      // Show loading indicator
+      EasyLoading.show(status: "Logging out...");
+      
+      // Sign out from Supabase
+      await _supabase.auth.signOut();
+      
+      // Clear any cached admin data
+      allEmployees.clear();
+      filteredEmployees.clear();
+      pendingAttendance.clear();
+      allAttendance.clear();
+      auditLogs.clear();
+      attendanceRawData.clear();
+      activeSchedules.clear();
+      coverageRequests.clear();
+      paymentRecords.clear();
+      
+      // Reset filters and selections
+      employeeSearchQuery.value = '';
+      selectedDepartment.value = 'All';
+      selectedAttendanceFilter.value = 'pending';
+      selectedStartDate.value = null;
+      selectedEndDate.value = null;
+      dateFilterType.value = 'today';
+      dashboardSummary.value = null;
+      
+      // Dismiss loading
+      EasyLoading.dismiss();
+      
+      // Use addPostFrameCallback to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Show success message
+        Get.snackbar(
+          'Success',
+          'Logged out successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppConstant.successColor,
+          colorText: Colors.white,
+          borderRadius: 15,
+          margin: EdgeInsets.all(15),
+        );
+        
+        // Navigate to welcome screen and clear navigation stack
+        Get.offAllNamed('/welcome');
+      });
+      
+    } catch (e) {
+      EasyLoading.dismiss();
+      
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.snackbar(
+          'Error',
+          'Failed to logout. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppConstant.errorColor,
+          colorText: Colors.white,
+          borderRadius: 15,
+          margin: EdgeInsets.all(15),
+        );
+      });
+      
+      print('Admin logout error: $e');
     }
   }
 }

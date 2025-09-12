@@ -260,10 +260,11 @@ class _AdminScreenState extends State<AdminScreen> {
             child: Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Get.back();
-              // Handle logout
-              Get.offAllNamed('/login');
+            onPressed: () async {
+              Get.back(); // Close dialog first
+              
+              // Call the logout method from controller
+              await adminController.onLogoutPressed();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppConstant.errorColor,
