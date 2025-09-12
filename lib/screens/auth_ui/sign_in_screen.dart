@@ -20,21 +20,38 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   final SignInController signInController = Get.put(SignInController());
   final GetUserDataController getUserDataController =
       Get.put(GetUserDataController());
-  TextEditingController userEmail = TextEditingController();
-  TextEditingController userPassword = TextEditingController();
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+  
+  // Use late initialization for better performance
+  late final TextEditingController userEmail;
+  late final TextEditingController userPassword;
+  late final AnimationController _animationController;
+  late final Animation<double> _fadeAnimation;
+
+  // Pre-built static widgets for better performance
+  static const _backgroundGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      AppConstant.gradientStart,
+      AppConstant.gradientEnd,
+      AppConstant.primaryColor,
+    ],
+    stops: [0.0, 0.7, 1.0],
+  );
 
   @override
   void initState() {
     super.initState();
+    userEmail = TextEditingController();
+    userPassword = TextEditingController();
+    
+    // Faster, simpler animation
     _animationController = AnimationController(
-      duration: Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(
@@ -42,15 +59,10 @@ class _SignInScreenState extends State<SignInScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOut,
     ));
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.elasticOut,
-    ));
+    
+    // Start animation immediately
     _animationController.forward();
   }
 
@@ -68,201 +80,181 @@ class _SignInScreenState extends State<SignInScreen>
       builder: (context, isKeyboardVisible) {
         return Scaffold(
           body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppConstant.gradientStart,
-                  AppConstant.gradientEnd,
-                  AppConstant.primaryColor,
-                ],
-                stops: [0.0, 0.7, 1.0],
-              ),
-            ),
+            decoration: const BoxDecoration(gradient: _backgroundGradient),
             child: SafeArea(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  height: Get.height - MediaQuery.of(context).padding.top,
-                  child: Column(
-                    children: [
-                      SizedBox(height: isKeyboardVisible ? 40 : 80),
-                      
-                      // Logo and Welcome Section
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: SlideTransition(
-                          position: _slideAnimation,
-                          child: Column(
-                            children: [
-                              // Logo Container with Beautiful Effects
-                              Container(
-                                padding: EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.white.withOpacity(0.95),
-                                      Colors.white.withOpacity(0.85),
-                                      AppConstant.backgroundColor.withOpacity(0.9),
-                                    ],
-                                    stops: [0.0, 0.5, 1.0],
-                                  ),
-                                  borderRadius: BorderRadius.circular(25),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.6),
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.white.withOpacity(0.3),
-                                      blurRadius: 30,
-                                      spreadRadius: 8,
-                                    ),
-                                    BoxShadow(
-                                      color: AppConstant.secondaryColor.withOpacity(0.1),
-                                      blurRadius: 20,
-                                      offset: Offset(0, 10),
-                                    ),
-                                    BoxShadow(
-                                      color: Colors.white.withOpacity(0.8),
-                                      blurRadius: 5,
-                                      offset: Offset(0, -2),
-                                    ),
-                                  ],
-                                ),
-                                child: Image.asset(
-                                  'assets/logo/tanainent_logo.png',
-                                  height: isKeyboardVisible ? 60 : 100,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                              
-                              if (!isKeyboardVisible) ...[
-                                SizedBox(height: 30),
-                                Text(
-                                  'Welcome Back',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Sign in to continue',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white.withOpacity(0.8),
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isCompact = isKeyboardVisible || constraints.maxHeight < 600;
+                  
+                  return SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
                       ),
-
-                      SizedBox(height: isKeyboardVisible ? 30 : 50),
-
-                      // Form Card
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.all(30),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              topRight: Radius.circular(30),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          children: [
+                            SizedBox(height: isCompact ? 20 : 60),
+                            
+                            // Logo and Welcome Section
+                            FadeTransition(
+                              opacity: _fadeAnimation,
+                              child: _buildLogoSection(isCompact),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 20,
-                                offset: Offset(0, -5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Email Field
-                              _buildInputField(
-                                controller: userEmail,
-                                label: 'Email',
-                                icon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                              ),
 
-                              SizedBox(height: 20),
+                            SizedBox(height: isCompact ? 20 : 40),
 
-                              // Password Field
-                              Obx(() => _buildPasswordField()),
-
-                              SizedBox(height: 10),
-
-                              // Forgot Password
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () => Get.to(() => ForgetPasswordScreen()),
-                                  child: Text(
-                                    'Forgot Password?',
-                                    style: TextStyle(
-                                      color: AppConstant.secondaryColor,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(height: 20),
-
-                              // Sign In Button
-                              _buildSignInButton(),
-
-                              SizedBox(height: 30),
-
-                              // Sign Up Link
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Don't have an account? ",
-                                    style: TextStyle(
-                                      color: AppConstant.appTextColor.withOpacity(0.7),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => Get.to(() => SignUpScreen()),
-                                    child: Text(
-                                      'Sign Up',
-                                      style: TextStyle(
-                                        color: AppConstant.secondaryColor,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                            // Form Card
+                            Expanded(
+                              child: _buildFormCard(),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildLogoSection(bool isCompact) {
+    return Column(
+      children: [
+        // Simplified logo container
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Image.asset(
+            'assets/logo/tanainent_logo.png',
+            height: isCompact ? 50 : 80,
+            fit: BoxFit.contain,
+          ),
+        ),
+        
+        if (!isCompact) ...[
+          const SizedBox(height: 24),
+          const Text(
+            'Welcome Back',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Sign in to continue',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white.withOpacity(0.8),
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFormCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Email Field
+          _buildInputField(
+            controller: userEmail,
+            label: 'Email',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Password Field
+          Obx(() => _buildPasswordField()),
+
+          const SizedBox(height: 8),
+
+          // Forgot Password
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Get.to(() => const ForgetPasswordScreen()),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Forgot Password?',
+                style: TextStyle(
+                  color: AppConstant.secondaryColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Sign In Button
+          _buildSignInButton(),
+
+          const SizedBox(height: 24),
+
+          // Sign Up Link
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Don't have an account? ",
+                style: TextStyle(
+                  color: AppConstant.appTextColor.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => Get.to(() => const SignUpScreen()),
+                child: const Text(
+                  'Sign Up',
+                  style: TextStyle(
+                    color: AppConstant.secondaryColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -274,30 +266,32 @@ class _SignInScreenState extends State<SignInScreen>
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppConstant.backgroundColor.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(15),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppConstant.backgroundColor.withOpacity(0.1),
+          color: Colors.grey.shade200,
+          width: 1,
         ),
       ),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
-        style: TextStyle(
-          color: const Color.fromARGB(255, 0, 0, 0),
+        style: const TextStyle(
+          color: Colors.black87,
           fontSize: 16,
         ),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
-            color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.6),
+            color: Colors.grey.shade600,
           ),
           prefixIcon: Icon(
             icon,
-            color: AppConstant.secondaryColor.withOpacity(0.7),
+            color: AppConstant.secondaryColor,
+            size: 20,
           ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
@@ -306,80 +300,68 @@ class _SignInScreenState extends State<SignInScreen>
   Widget _buildPasswordField() {
     return Container(
       decoration: BoxDecoration(
-        color: AppConstant.backgroundColor.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(15),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppConstant.backgroundColor.withOpacity(0.1),
+          color: Colors.grey.shade200,
+          width: 1,
         ),
       ),
       child: TextFormField(
         controller: userPassword,
         obscureText: !signInController.isPasswordVisible.value,
-        style: TextStyle(
-          color: const Color.fromARGB(255, 0, 0, 0),
+        style: const TextStyle(
+          color: Colors.black87,
           fontSize: 16,
         ),
         decoration: InputDecoration(
           labelText: 'Password',
           labelStyle: TextStyle(
-            color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.6),
+            color: Colors.grey.shade600,
           ),
-          prefixIcon: Icon(
+          prefixIcon: const Icon(
             Icons.lock_outline,
-            color: AppConstant.secondaryColor.withOpacity(0.7),
+            color: AppConstant.secondaryColor,
+            size: 20,
           ),
           suffixIcon: IconButton(
-            onPressed: () {
-              signInController.isPasswordVisible.toggle();
-            },
+            onPressed: signInController.isPasswordVisible.toggle,
             icon: Icon(
               signInController.isPasswordVisible.value
                   ? Icons.visibility_outlined
                   : Icons.visibility_off_outlined,
-              color: AppConstant.secondaryColor.withOpacity(0.7),
+              color: AppConstant.secondaryColor,
+              size: 20,
             ),
           ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
   }
 
   Widget _buildSignInButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppConstant.gradientStart, AppConstant.gradientEnd],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: AppConstant.secondaryColor.withOpacity(0.3),
-            blurRadius: 15,
-            offset: Offset(0, 8),
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _handleSignIn,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppConstant.secondaryColor,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          shadowColor: AppConstant.secondaryColor.withOpacity(0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(15),
-          onTap: _handleSignIn,
-          child: Center(
-            child: Text(
-              'SIGN IN',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.5,
-              ),
-            ),
+        ),
+        child: const Text(
+          'SIGN IN',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -387,159 +369,128 @@ class _SignInScreenState extends State<SignInScreen>
   }
 
   Future<void> _handleSignIn() async {
-    String email = userEmail.text.trim();
-    String password = userPassword.text.trim();
+    final email = userEmail.text.trim();
+    final password = userPassword.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      Get.snackbar(
+      _showSnackbar(
         "Error",
         "Please enter all details",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppConstant.errorColor,
-        colorText: Colors.white,
-        borderRadius: 15,
-        margin: EdgeInsets.all(15),
+        AppConstant.errorColor,
       );
       return;
     }
 
     try {
-      Map<String, dynamic> result = await signInController.signInMethod(email, password);
+      final result = await signInController.signInMethod(email, password);
 
       if (result['success'] == true) {
-        AuthResponse authResponse = result['authResponse'];
+        final AuthResponse authResponse = result['authResponse'];
         
-        // For Supabase, email verification status is already checked in controller
         try {
-          // Get the complete user model
+          // Get user model efficiently
           UserModel? userModel = await getUserDataController
               .getUserModel(authResponse.user!.id);
           
-          // If user model doesn't exist, create it automatically
+          // Create default profile if needed
           if (userModel == null) {
-            print('User profile not found, creating default profile...');
-            
-            // Create a default user profile from auth data
-            final authUser = authResponse.user!;
-            final defaultUserModel = UserModel(
-              uId: authUser.id,
-              employeeId: 'EMP-${authUser.id.substring(0, 8).toUpperCase()}',
-              username: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
-              email: authUser.email ?? email,
-              phone: authUser.userMetadata?['phone'] ?? '',
-              fullName: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
-              department: 'General',
-              position: 'Employee',
-              userRole: 'employee',
-              userImg: null,
-              userDeviceToken: null,
-              isActive: true,
-              createdOn: DateTime.now(),
-              workLocation: authUser.userMetadata?['city'],
-              biometricEnabled: false,
-              notificationsEnabled: true,
-              preferredLanguage: 'en',
-              leaveBalance: 30,
-              totalCoverageGiven: 0,
-              totalCoverageReceived: 0,
-              attendanceRate: 100.0,
-            );
-
-            // Try to create the user profile
-            final success = await getUserDataController.createUserModel(defaultUserModel);
-            
-            if (success) {
-              userModel = defaultUserModel;
-              print('Default user profile created successfully');
-            } else {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Get.snackbar(
-                  "Error",
-                  "Failed to create user profile. Please contact support.",
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppConstant.errorColor,
-                  colorText: Colors.white,
-                  borderRadius: 15,
-                  margin: EdgeInsets.all(15),
-                );
-              });
+            userModel = await _createDefaultUserProfile(authResponse.user!, email);
+            if (userModel == null) {
+              _showSnackbar(
+                "Error",
+                "Failed to create user profile. Please contact support.",
+                AppConstant.errorColor,
+              );
               return;
             }
           }
           
-          // At this point, userModel should not be null
-          if (userModel != null) {
-            if (userModel.isAdmin) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Get.snackbar(
-                  "Success",
-                  "Admin login successful!",
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppConstant.successColor,
-                  colorText: Colors.white,
-                  borderRadius: 15,
-                  margin: EdgeInsets.all(15),
-                );
-                // Navigate to admin screen
-                Get.offAllNamed('/admin', arguments: userModel);
-              });
-            } else {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Get.snackbar(
-                  "Success",
-                  "Login successful!",
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppConstant.successColor,
-                  colorText: Colors.white,
-                  borderRadius: 15,
-                  margin: EdgeInsets.all(15),
-                );
-                Get.offAll(() => LandingScreen(userModel: userModel!));
-              });
-            }
-          }
+          // Navigate based on user role
+          _navigateToApp(userModel);
+          
         } catch (e) {
-          print('Error loading user profile: $e');
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Get.snackbar(
-              "Error",
-              "Failed to load user profile: ${e.toString()}",
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: AppConstant.errorColor,
-              colorText: Colors.white,
-              borderRadius: 15,
-              margin: EdgeInsets.all(15),
-            );
-          });
+          _showSnackbar(
+            "Error",
+            "Failed to load user profile: ${e.toString()}",
+            AppConstant.errorColor,
+          );
         }
       } else {
-        // Show the specific error message from the controller
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Get.snackbar(
-            "Error",
-            result['message'],
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: AppConstant.errorColor,
-            colorText: Colors.white,
-            borderRadius: 15,
-            margin: EdgeInsets.all(15),
-            duration: Duration(seconds: 5), // Show longer for verification messages
-          );
-        });
+        _showSnackbar(
+          "Error",
+          result['message'],
+          AppConstant.errorColor,
+          duration: 5,
+        );
       }
     } catch (e) {
-      print('Sign in error: $e');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Get.snackbar(
-          "Error",
-          "An error occurred during sign in: ${e.toString()}",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppConstant.errorColor,
-          colorText: Colors.white,
-          borderRadius: 15,
-          margin: EdgeInsets.all(15),
-        );
-      });
+      _showSnackbar(
+        "Error",
+        "An error occurred during sign in: ${e.toString()}",
+        AppConstant.errorColor,
+      );
     }
+  }
+
+  Future<UserModel?> _createDefaultUserProfile(User authUser, String email) async {
+    final defaultUserModel = UserModel(
+      uId: authUser.id,
+      employeeId: 'EMP-${authUser.id.substring(0, 8).toUpperCase()}',
+      username: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
+      email: authUser.email ?? email,
+      phone: authUser.userMetadata?['phone'] ?? '',
+      fullName: authUser.userMetadata?['full_name'] ?? email.split('@')[0],
+      department: 'General',
+      position: 'Employee',
+      userRole: 'employee',
+      userImg: null,
+      userDeviceToken: null,
+      isActive: true,
+      createdOn: DateTime.now(),
+      workLocation: authUser.userMetadata?['city'],
+      biometricEnabled: false,
+      notificationsEnabled: true,
+      preferredLanguage: 'en',
+      leaveBalance: 30,
+      totalCoverageGiven: 0,
+      totalCoverageReceived: 0,
+      attendanceRate: 100.0,
+    );
+
+    final success = await getUserDataController.createUserModel(defaultUserModel);
+    return success ? defaultUserModel : null;
+  }
+
+  void _navigateToApp(UserModel userModel) {
+    if (userModel.isAdmin) {
+      _showSnackbar(
+        "Success",
+        "Admin login successful!",
+        AppConstant.successColor,
+      );
+      Get.offAllNamed('/admin', arguments: userModel);
+    } else {
+      _showSnackbar(
+        "Success",
+        "Login successful!",
+        AppConstant.successColor,
+      );
+      Get.offAll(() => LandingScreen(userModel: userModel));
+    }
+  }
+
+  void _showSnackbar(String title, String message, Color color, {int duration = 3}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.snackbar(
+        title,
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: color,
+        colorText: Colors.white,
+        borderRadius: 12,
+        margin: const EdgeInsets.all(16),
+        duration: Duration(seconds: duration),
+      );
+    });
   }
 }
