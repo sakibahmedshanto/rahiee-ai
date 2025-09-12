@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import '../controllers/unified_schedule_controller.dart';
-import '../models/schedule_model.dart';
-import '../utils/app_constant.dart';
+import '../../controllers/unified_schedule_controller.dart';
+import '../../models/schedule_model.dart';
+import '../../utils/app_constant.dart';
 
 class UnifiedScheduleScreen extends StatelessWidget {
   const UnifiedScheduleScreen({Key? key}) : super(key: key);

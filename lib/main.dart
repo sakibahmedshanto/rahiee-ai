@@ -8,8 +8,7 @@ import 'services/attendance_management_service.dart';
 import 'services/location_permission_service.dart';
 import 'screens/auth_ui/splash_screen/splash_screen.dart';
 import 'screens/auth_ui/welcome_screen.dart';
-import 'screens/schedule_screen/schedule_screen.dart';
-import 'screens/admin/admin_screen/new_admin_screen.dart';
+import 'screens/admin/admin_screen/admin_screen.dart';
 import 'screens/auth_ui/sign_in_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
@@ -52,7 +51,6 @@ class MyApp extends StatelessWidget {
       getPages: [
         GetPage(name: '/', page: () => const SplashScreen()),
         GetPage(name: '/welcome', page: () => const WelcomeScreen()),
-        GetPage(name: '/schedule', page: () => const ScheduleScreen()),
         GetPage(name: '/admin', page: () => const AdminScreen()),
         GetPage(name: '/sign-in', page: () => const SignInScreen()),
       ],

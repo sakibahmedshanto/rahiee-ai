@@ -2,13 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rahiee_ai/screens/attendance_history_screen/attendance_history_screen.dart';
 import '../../models/user_model.dart';
 import '../../utils/app_constant.dart';
 import '../../controllers/landing_screen_controller/landing_controller.dart';
-import '../schedule_screen/schedule_screen.dart';
-import '../schedule_screen/components/schedule_floating_action_button.dart';
 import '../profile_screen/profile_screen.dart';
-import '../unified_schedule_screen.dart';
+import '../schedule_screen/unified_schedule_screen.dart';
 import 'components/landing_bottom_navigation.dart';
 
 class LandingScreen extends StatefulWidget {
@@ -44,9 +43,9 @@ class _LandingScreenState extends State<LandingScreen> {
         child: Obx(() {
           switch (_selectedIndex.value) {
             case 0:
-              return const ScheduleScreen();
-            case 1:
               return const UnifiedScheduleScreen();
+            case 1:
+              return const AttendanceHistoryScreen();
             case 2:
               return _buildComingSoonScreen('Chat');
             case 3:
@@ -54,13 +53,10 @@ class _LandingScreenState extends State<LandingScreen> {
             case 4:
               return _buildComingSoonScreen('More');
             default:
-              return const ScheduleScreen();
+              return const UnifiedScheduleScreen();
           }
         }),
       ),
-      floatingActionButton: Obx(() => _selectedIndex.value == 0 
-          ? const ScheduleFloatingActionButton() 
-          : const SizedBox.shrink()),
       bottomNavigationBar: LandingBottomNavigation(
         selectedIndex: _selectedIndex,
       ),
