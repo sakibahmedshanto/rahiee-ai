@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../../controllers/admin_controllers/admin_controller.dart';
 import '../../../../../utils/app_constant.dart';
 
@@ -15,10 +16,6 @@ class AttendanceTableTab extends StatefulWidget {
 }
 
 class _AttendanceTableTabState extends State<AttendanceTableTab> {
-  String selectedDepartment = 'All Departments';
-  String selectedStatus = 'All Status';
-  String selectedDateRange = 'Today';
-  
   // Scroll controllers for synchronized scrolling
   final ScrollController _headerScrollController = ScrollController();
   final ScrollController _dataScrollController = ScrollController();
@@ -26,6 +23,10 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
   @override
   void initState() {
     super.initState();
+    
+    // Load data when the tab is initialized
+    widget.controller.loadAttendanceTableData();
+    
     // Synchronize horizontal scrolling between header and data
     _headerScrollController.addListener(() {
       if (_dataScrollController.hasClients && !_dataScrollController.position.isScrollingNotifier.value) {
@@ -47,84 +48,9 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
     super.dispose();
   }
 
-  final List<Map<String, dynamic>> attendanceData = [
-    {
-      'name': 'Johnn Smith',
-      'avatar': 'JS',
-      'department': 'Engineering',
-      'checkIn': '09:00 AM',
-      'checkOut': '06:00 PM',
-      'workingHours': '8h 30m',
-      'status': 'Present',
-    },
-    {
-      'name': 'Sarah Johnson',
-      'avatar': 'SJ',
-      'department': 'Marketing',
-      'checkIn': '08:45 AM',
-      'checkOut': '05:45 PM',
-      'workingHours': '8h 20m',
-      'status': 'Present',
-    },
-    {
-      'name': 'Michael Chen',
-      'avatar': 'MC',
-      'department': 'Sales',
-      'checkIn': '09:15 AM',
-      'checkOut': '--',
-      'workingHours': 'Active',
-      'status': 'Present',
-    },
-    {
-      'name': 'Emily Davis',
-      'avatar': 'ED',
-      'department': 'HR',
-      'checkIn': '--',
-      'checkOut': '--',
-      'workingHours': '--',
-      'status': 'Absent',
-    },
-    {
-      'name': 'David Wilson',
-      'avatar': 'DW',
-      'department': 'Finance',
-      'checkIn': '09:30 AM',
-      'checkOut': '06:15 PM',
-      'workingHours': '8h 15m',
-      'status': 'Late',
-    },
-    {
-      'name': 'Lisa Anderson',
-      'avatar': 'LA',
-      'department': 'Engineering',
-      'checkIn': '--',
-      'checkOut': '--',
-      'workingHours': '--',
-      'status': 'Sick Leave',
-    },
-    {
-      'name': 'Robert Taylor',
-      'avatar': 'RT',
-      'department': 'Marketing',
-      'checkIn': '08:30 AM',
-      'checkOut': '05:30 PM',
-      'workingHours': '8h 30m',
-      'status': 'Present',
-    },
-    {
-      'name': 'Jennifer Brown',
-      'avatar': 'JB',
-      'department': 'Sales',
-      'checkIn': '09:00 AM',
-      'checkOut': '--',
-      'workingHours': 'Active',
-      'status': 'Present',
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() => Scaffold(
       backgroundColor: Colors.grey[50],
       body: CustomScrollView(
         slivers: [
@@ -143,10 +69,19 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
             ),
           ),
           
-          // Table Content
-          SliverToBoxAdapter(
-            child: _buildScrollableTableContent(),
-          ),
+          // Table Content with loading state
+          widget.controller.isTableLoading.value
+              ? SliverToBoxAdapter(
+                  child: Container(
+                    height: 200,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                )
+              : SliverToBoxAdapter(
+                  child: _buildScrollableTableContent(),
+                ),
           
           // Footer
           SliverToBoxAdapter(
@@ -154,7 +89,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildFiltersSection() {
@@ -169,18 +104,24 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
               Expanded(
                 child: _buildFilterDropdown(
                   'Department',
-                  selectedDepartment,
+                  widget.controller.tableSelectedDepartment.value,
                   ['All Departments', 'Engineering', 'Marketing', 'Sales', 'HR', 'Finance'],
-                  (value) => setState(() => selectedDepartment = value!),
+                  (value) {
+                    widget.controller.tableSelectedDepartment.value = value!;
+                    widget.controller.loadAttendanceTableData();
+                  },
                 ),
               ),
               SizedBox(width: 12),
               Expanded(
                 child: _buildFilterDropdown(
                   'Status',
-                  selectedStatus,
+                  widget.controller.tableSelectedStatus.value,
                   ['All Status', 'Present', 'Absent', 'Late', 'Sick Leave'],
-                  (value) => setState(() => selectedStatus = value!),
+                  (value) {
+                    widget.controller.tableSelectedStatus.value = value!;
+                    widget.controller.loadAttendanceTableData();
+                  },
                 ),
               ),
             ],
@@ -194,9 +135,12 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
               Expanded(
                 child: _buildFilterDropdown(
                   'Date Range',
-                  selectedDateRange,
+                  widget.controller.tableSelectedDateRange.value,
                   ['Today', 'Yesterday', 'This Week', 'This Month'],
-                  (value) => setState(() => selectedDateRange = value!),
+                  (value) {
+                    widget.controller.tableSelectedDateRange.value = value!;
+                    widget.controller.loadAttendanceTableData();
+                  },
                 ),
               ),
               SizedBox(width: 12),
@@ -405,7 +349,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
       child: Row(
         children: [
           Text(
-            'Showing ${attendanceData.length} of 150 employees',
+            'Showing ${widget.controller.tableAttendanceList.length} of ${widget.controller.tableTotalRecords.value} employees',
             style: TextStyle(
               fontSize: 12,
               color: AppConstant.textPrimary.withOpacity(0.7),
@@ -539,7 +483,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
         child: SizedBox(
           width: 628, // Same width as header (628px total)
           child: Column(
-            children: attendanceData.asMap().entries.map((entry) {
+            children: widget.controller.tableAttendanceList.asMap().entries.map((entry) {
               int index = entry.key;
               Map<String, dynamic> employee = entry.value;
               

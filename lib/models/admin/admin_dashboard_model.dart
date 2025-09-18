@@ -27,7 +27,7 @@ class AdminDashboardSummaryModel {
 
   factory AdminDashboardSummaryModel.fromMap(Map<String, dynamic> json) {
     return AdminDashboardSummaryModel(
-      date: DateTime.parse(json['date']),
+      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
       totalEmployees: json['total_employees'] ?? 0,
       checkedInToday: json['checked_in_today'] ?? 0,
       pendingApprovals: json['pending_approvals'] ?? 0,
@@ -41,7 +41,7 @@ class AdminDashboardSummaryModel {
               .map((dept) => DepartmentBreakdownModel.fromMap(dept))
               .toList()
           : [],
-      generatedAt: DateTime.parse(json['generated_at']),
+      generatedAt: json['generated_at'] != null ? DateTime.parse(json['generated_at']) : DateTime.now(),
     );
   }
 

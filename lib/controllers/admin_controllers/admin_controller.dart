@@ -43,6 +43,16 @@ class AdminController extends GetxController {
   final Rx<DateTime?> selectedEndDate = Rx<DateTime?>(null);
   final RxString dateFilterType = 'today'.obs; // 'today', 'range', 'all'
   
+  // Table specific filters
+  final RxString tableSelectedDepartment = 'All Departments'.obs;
+  final RxString tableSelectedStatus = 'All Status'.obs;
+  final RxString tableSelectedDateRange = 'Today'.obs;
+  final RxBool isTableLoading = false.obs;
+  final RxInt tableCurrentPage = 1.obs;
+  final RxInt tableItemsPerPage = 20.obs;
+  final RxInt tableTotalRecords = 0.obs;
+  final RxList<Map<String, dynamic>> tableAttendanceList = <Map<String, dynamic>>[].obs;
+  
   // Schedule management
   final RxList<ScheduleModel> activeSchedules = <ScheduleModel>[].obs;
   final RxList<ScheduleCoverageModel> coverageRequests = <ScheduleCoverageModel>[].obs;
@@ -131,7 +141,7 @@ class AdminController extends GetxController {
         loadAllEmployees(),
         loadPendingAttendance(),
         loadActiveSchedules(),
-        loadRecentAuditLogs(),
+        // loadRecentAuditLogs(), // Disabled: table doesn't exist yet
       ]);
 
     } catch (e) {
@@ -158,8 +168,27 @@ class AdminController extends GetxController {
         params: {'summary_date': DateTime.now().toIso8601String().split('T')[0]}
       );
       
-      if (response != null) {
-        dashboardSummary.value = AdminDashboardSummaryModel.fromMap(response);
+      if (response != null && response['success'] == true) {
+        final data = response['data'];
+        final overall = data['overall'];
+        final departments = data['departments'] as List? ?? [];
+        
+        // Transform the response to match the model structure
+        final transformedData = {
+          'date': DateTime.now().toIso8601String().split('T')[0],
+          'total_employees': overall['totalEmployees'] ?? 0,
+          'checked_in_today': overall['checkedInToday'] ?? 0,
+          'pending_approvals': overall['pendingApprovals'] ?? 0,
+          'granted_today': 0, // Not provided by current RPC
+          'not_granted_today': 0, // Not provided by current RPC
+          'total_hours_today': 0.0, // Not provided by current RPC
+          'total_amount_today': 0.0, // Not provided by current RPC
+          'unpaid_amount': overall['unpaidAmount'] ?? 0.0,
+          'department_breakdown': departments,
+          'generated_at': DateTime.now().toIso8601String(),
+        };
+        
+        dashboardSummary.value = AdminDashboardSummaryModel.fromMap(transformedData);
         _updateAnalytics();
       }
     } catch (e) {
@@ -174,6 +203,98 @@ class AdminController extends GetxController {
       totalCheckedInToday.value = summary.checkedInToday;
       totalPendingApprovals.value = summary.pendingApprovals;
       totalUnpaidAmount.value = summary.unpaidAmount;
+    }
+  }
+
+  // Load filtered attendance data for table
+  Future<void> loadAttendanceTableData() async {
+    try {
+      isTableLoading.value = true;
+
+      // Determine date filter based on selected range
+      String dateFilter = 'month'; // Default to last month to show data
+      
+      if (tableSelectedDateRange.value.isNotEmpty && 
+          tableSelectedDateRange.value != 'All Time') {
+        if (tableSelectedDateRange.value == 'Today') {
+          dateFilter = 'today';
+        } else if (tableSelectedDateRange.value == 'This Week') {
+          dateFilter = 'week';
+        } else if (tableSelectedDateRange.value == 'This Month') {
+          dateFilter = 'month';
+        }
+      }
+      
+      // Status filter
+      String statusFilter = 'all';
+      if (tableSelectedStatus.value.isNotEmpty && 
+          tableSelectedStatus.value != 'All Status') {
+        statusFilter = tableSelectedStatus.value.toLowerCase();
+      }
+      
+      // Department filter
+      String departmentFilter = 'all';
+      if (tableSelectedDepartment.value.isNotEmpty && 
+          tableSelectedDepartment.value != 'All Departments') {
+        departmentFilter = tableSelectedDepartment.value;
+      }
+
+      final response = await _supabase.rpc('get_admin_attendance_records', params: {
+        'p_date_filter': dateFilter,
+        'p_status_filter': statusFilter,
+        'p_department_filter': departmentFilter,
+        'p_limit': 50,
+        'p_offset': 0,
+      });
+
+      if (response != null && response['success'] == true) {
+        final attendanceData = response['data'] as List;
+        final pagination = response['pagination'] ?? {};
+        
+        // Update total records from pagination info
+        tableTotalRecords.value = pagination['total_records'] ?? attendanceData.length;
+        
+        // Transform the data to match the table format
+        tableAttendanceList.value = attendanceData.map((record) {
+          final employee = record['employee'] ?? {};
+          final schedule = record['schedule'] ?? {};
+          
+          // Format times
+          String formatTime(String? timeStr) {
+            if (timeStr == null || timeStr.isEmpty) return '--';
+            try {
+              final dateTime = DateTime.parse(timeStr);
+              return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+            } catch (e) {
+              return timeStr;
+            }
+          }
+          
+          return {
+            'name': employee['full_name'] ?? 'Unknown',
+            'avatar': (employee['full_name'] ?? 'U').split(' ').map((n) => n[0]).take(2).join().toUpperCase(),
+            'department': employee['department'] ?? 'Not Specified',
+            'date': record['date'] ?? '',
+            'checkIn': formatTime(record['check_in_time']),
+            'checkOut': formatTime(record['check_out_time']),
+            'scheduledIn': formatTime(schedule?['start_time']),
+            'scheduledOut': formatTime(schedule?['end_time']),
+            'status': record['status'] ?? 'Unknown',
+            'workingHours': record['total_work_hours']?.toString() ?? '0',
+            'overtime': record['overtime_hours']?.toString() ?? '0',
+            'location': schedule?['location'] ?? record['check_in_address'] ?? 'Office',
+          };
+        }).toList();
+      } else {
+        // Fallback to empty list if response is invalid
+        tableAttendanceList.value = [];
+        print('Failed to load attendance data: ${response?['message'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      print('Error loading attendance table data: $e');
+      tableAttendanceList.value = [];
+    } finally {
+      isTableLoading.value = false;
     }
   }
 
@@ -578,23 +699,12 @@ class AdminController extends GetxController {
   // Audit Logs
   Future<void> loadRecentAuditLogs({int limit = 50}) async {
     try {
-      final response = await _supabase
-          .from('attendance_audit_log')
-          .select('''
-            *,
-            employee:employee_id(full_name, employee_id),
-            changed_by_user:changed_by(full_name, employee_id)
-          ''')
-          .order('changed_at', ascending: false)
-          .limit(limit);
-
-      final logs = (response as List)
-          .map((log) => AttendanceAuditModel.fromMap(log))
-          .toList();
-
-      auditLogs.value = logs;
+      // TODO: Implement audit logs when attendance_audit_log table is created
+      print('Audit logs feature not implemented yet - table attendance_audit_log does not exist');
+      auditLogs.value = [];
     } catch (e) {
       print('Error loading audit logs: $e');
+      auditLogs.value = [];
     }
   }
 
