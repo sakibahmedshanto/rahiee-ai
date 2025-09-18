@@ -49,7 +49,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
 
   final List<Map<String, dynamic>> attendanceData = [
     {
-      'name': 'John Smith',
+      'name': 'Johnn Smith',
       'avatar': 'JS',
       'department': 'Engineering',
       'checkIn': '09:00 AM',
@@ -265,117 +265,24 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
     );
   }
 
-  Widget _buildDataTable() {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        dividerColor: Colors.grey.shade200,
-      ),
-      child: DataTable(
-        columnSpacing: 20,
-        horizontalMargin: 16,
-        headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
-        dataRowHeight: 65,
-        headingRowHeight: 50,
-        columns: [
-          DataColumn(
-            label: Text(
-              'Employee',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppConstant.textPrimary,
-              ),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Department',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppConstant.textPrimary,
-              ),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Check In',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppConstant.textPrimary,
-              ),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Check Out',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppConstant.textPrimary,
-              ),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Hours',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppConstant.textPrimary,
-              ),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Status',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppConstant.textPrimary,
-              ),
-            ),
-          ),
-          DataColumn(
-            label: Text(
-              'Actions',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppConstant.textPrimary,
-              ),
-            ),
-          ),
-        ],
-        rows: attendanceData.map((employee) {
-          return DataRow(
-            cells: [
-              DataCell(_buildEmployeeInfo(employee)),
-              DataCell(_buildDepartmentChip(employee['department'])),
-              DataCell(_buildTimeText(employee['checkIn'])),
-              DataCell(_buildTimeText(employee['checkOut'])),
-              DataCell(_buildHoursText(employee['workingHours'])),
-              DataCell(_buildStatusChip(employee['status'])),
-              DataCell(_buildActionButtons()),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   Widget _buildEmployeeInfo(Map<String, dynamic> employee) {
     return Container(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           CircleAvatar(
-            radius: 18,
+            radius: 16,
             backgroundColor: AppConstant.primaryColor.withOpacity(0.1),
             child: Text(
               employee['avatar'] ?? 'U',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: AppConstant.primaryColor,
               ),
             ),
           ),
-          SizedBox(width: 8),
+          SizedBox(width: 6),
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,7 +291,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
                 Text(
                   employee['name'] ?? 'Unknown',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppConstant.textPrimary,
                   ),
@@ -393,7 +300,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
                 Text(
                   'ID: EMP${1000 + (employee['name']?.hashCode.abs() ?? 0) % 9999}',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 9,
                     color: AppConstant.textPrimary.withOpacity(0.6),
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -439,18 +346,6 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
     );
   }
 
-  Widget _buildHoursText(String? hours) {
-    final hoursStr = hours ?? '--';
-    return Text(
-      hoursStr,
-      style: TextStyle(
-        fontSize: 14,
-        color: hoursStr == '--' ? Colors.grey : AppConstant.textPrimary,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-
   Widget _buildStatusChip(String? status) {
     final statusStr = status ?? 'Unknown';
     return Container(
@@ -478,18 +373,19 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
           onPressed: () {
             // View details
           },
-          icon: Icon(Icons.visibility, size: 16),
-          padding: EdgeInsets.all(4),
-          constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+          icon: Icon(Icons.visibility, size: 14),
+          padding: EdgeInsets.all(2),
+          constraints: BoxConstraints(minWidth: 28, minHeight: 28),
           color: Colors.blue,
         ),
+        SizedBox(width: 2),
         IconButton(
           onPressed: () {
             // Edit entry
           },
-          icon: Icon(Icons.edit, size: 16),
-          padding: EdgeInsets.all(4),
-          constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+          icon: Icon(Icons.edit, size: 14),
+          padding: EdgeInsets.all(2),
+          constraints: BoxConstraints(minWidth: 28, minHeight: 28),
           color: Colors.green,
         ),
       ],
@@ -563,6 +459,9 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
   }
 
   Widget _buildStickyTableHeader() {
+    // Calculate total width: 150+100+80+80+100+80+80 = 670
+    const double totalWidth = 628; // Reduced from 670 to fix 42px overflow
+    
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -579,17 +478,17 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
       child: SingleChildScrollView(
         controller: _headerScrollController,
         scrollDirection: Axis.horizontal,
-        child: Container(
-          width: 800, // Fixed width for horizontal scrolling
+        child: SizedBox(
+          width: totalWidth,
           child: Row(
             children: [
-              _buildHeaderCell('Employee', 200),
-              _buildHeaderCell('Department', 120),
-              _buildHeaderCell('Check In', 100),
-              _buildHeaderCell('Check Out', 100),
-              _buildHeaderCell('Working Hours', 120),
-              _buildHeaderCell('Status', 100),
-              _buildHeaderCell('Actions', 100),
+              _buildHeaderCell('Employee', 140), // Reduced from 150
+              _buildHeaderCell('Department', 90), // Reduced from 100
+              _buildHeaderCell('Check In', 75), // Reduced from 80
+              _buildHeaderCell('Check Out', 75), // Reduced from 80
+              _buildHeaderCell('Working Hours', 90), // Reduced from 100
+              _buildHeaderCell('Status', 78), // Reduced from 80
+              _buildHeaderCell('Actions', 80), // Same
             ],
           ),
         ),
@@ -598,17 +497,19 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
   }
 
   Widget _buildHeaderCell(String title, double width) {
-    return Container(
+    return SizedBox(
       width: width,
       height: 50,
-      padding: EdgeInsets.symmetric(horizontal: 12),
-      alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: AppConstant.textPrimary,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppConstant.textPrimary,
+          ),
         ),
       ),
     );
@@ -635,8 +536,8 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
       child: SingleChildScrollView(
         controller: _dataScrollController,
         scrollDirection: Axis.horizontal,
-        child: Container(
-          width: 800, // Same width as header
+        child: SizedBox(
+          width: 628, // Same width as header (628px total)
           child: Column(
             children: attendanceData.asMap().entries.map((entry) {
               int index = entry.key;
@@ -654,13 +555,13 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
                 ),
                 child: Row(
                   children: [
-                    _buildDataCell(_buildEmployeeInfo(employee), 200),
-                    _buildDataCell(_buildDepartmentChip(employee['department']), 120),
-                    _buildDataCell(_buildTimeText(employee['checkIn']), 100),
-                    _buildDataCell(_buildTimeText(employee['checkOut']), 100),
-                    _buildDataCell(_buildTimeText(employee['workingHours']), 120),
-                    _buildDataCell(_buildStatusChip(employee['status']), 100),
-                    _buildDataCell(_buildActionButtons(), 100),
+                    _buildDataCell(_buildEmployeeInfo(employee), 140), // Reduced from 150
+                    _buildDataCell(_buildDepartmentChip(employee['department']), 90), // Reduced from 100
+                    _buildDataCell(_buildTimeText(employee['checkIn']), 75), // Reduced from 80
+                    _buildDataCell(_buildTimeText(employee['checkOut']), 75), // Reduced from 80
+                    _buildDataCell(_buildTimeText(employee['workingHours']), 90), // Reduced from 100
+                    _buildDataCell(_buildStatusChip(employee['status']), 78), // Reduced from 80
+                    _buildDataCell(_buildActionButtons(), 80), // Same
                   ],
                 ),
               );
@@ -672,12 +573,14 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
   }
 
   Widget _buildDataCell(Widget child, double width) {
-    return Container(
+    return SizedBox(
       width: width,
       height: 60,
-      padding: EdgeInsets.symmetric(horizontal: 12),
-      alignment: Alignment.centerLeft,
-      child: child,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.centerLeft,
+        child: child,
+      ),
     );
   }
 }

@@ -8,7 +8,7 @@ import '../../../models/user_model.dart';
 import 'components/admin_bottom_navigation.dart';
 import 'tabs/admin_dashboard_tab.dart';
 import 'tabs/admin_employees_tab.dart';
-import 'tabs/enhanced_admin_attendance_tab.dart';
+import 'tabs/admin_attendance_tab.dart';
 import 'tabs/admin_schedules_tab.dart';
 import 'tabs/admin_summary_tab.dart';
 
