@@ -298,6 +298,46 @@ class AdminController extends GetxController {
     }
   }
 
+  // Update attendance status
+  Future<bool> updateAttendanceStatus({
+    required String attendanceId,
+    required String newStatus,
+    String? adminNotes,
+    String? reviewReason,
+    double? calculatedAmount,
+    double? adjustedHours,
+  }) async {
+    try {
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
+        print('Error: No authenticated user found');
+        return false;
+      }
+
+      final response = await _supabase.rpc('admin_update_attendance_status', params: {
+        'p_attendance_id': attendanceId,
+        'p_admin_id': currentUser.id,
+        'p_new_status': newStatus,
+        'p_admin_notes': adminNotes,
+        'p_review_reason': reviewReason,
+        'p_calculated_amount': calculatedAmount,
+        'p_adjusted_hours': adjustedHours,
+      });
+
+      if (response != null && response['success'] == true) {
+        // Refresh the attendance table data
+        await loadAttendanceTableData();
+        return true;
+      } else {
+        print('Failed to update attendance status: ${response?['message'] ?? 'Unknown error'}');
+        return false;
+      }
+    } catch (e) {
+      print('Error updating attendance status: $e');
+      return false;
+    }
+  }
+
   // Employee Management
   Future<void> loadAllEmployees() async {
     try {

@@ -290,49 +290,204 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
     );
   }
 
-  Widget _buildStatusChip(String? status) {
-    final statusStr = status ?? 'Unknown';
+  Widget _buildActionButtons(Map<String, dynamic> employee) {
+    String currentStatus = employee['status'] ?? 'pending';
+    
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      width: 140, // Increased width to better fit the column
+      height: 32,
+      padding: EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: _getStatusColor(statusStr).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: _getStatusButtonColor(currentStatus),
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(
-        statusStr,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: _getStatusColor(statusStr),
-        ),
+      child: DropdownButton<String>(
+        value: currentStatus,
+        isDense: true,
+        underline: Container(),
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+        isExpanded: true,
+        dropdownColor: Colors.white,
+        icon: Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey.shade600),
+        items: [
+          'pending',
+          'granted', 
+          'not_granted',
+          'completed',
+          'approved',
+          'rejected'
+        ].map((status) => DropdownMenuItem(
+          value: status,
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _getStatusIndicatorColor(status),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 6),
+                Text(
+                  status.replaceAll('_', ' ').toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade800,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )).toList(),
+        selectedItemBuilder: (context) => [
+          'pending',
+          'granted', 
+          'not_granted',
+          'completed',
+          'approved',
+          'rejected'
+        ].map((status) => Container(
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: _getStatusIndicatorColor(status),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(width: 4),
+              Text(
+                status.replaceAll('_', ' ').toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey.shade800,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        )).toList(),
+        onChanged: (newStatus) {
+          if (newStatus != null && newStatus != currentStatus) {
+            _showStatusChangeDialog(employee, newStatus);
+          }
+        },
       ),
     );
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          onPressed: () {
-            // View details
-          },
-          icon: Icon(Icons.visibility, size: 14),
-          padding: EdgeInsets.all(2),
-          constraints: BoxConstraints(minWidth: 28, minHeight: 28),
-          color: Colors.blue,
+  // Helper method to get status button background color (lighter version)
+  Color _getStatusButtonColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'granted':
+      case 'approved':
+        return Colors.green.shade50;
+      case 'pending':
+        return Colors.orange.shade50;
+      case 'not_granted':
+      case 'rejected':
+        return Colors.red.shade50;
+      case 'completed':
+        return Colors.blue.shade50;
+      default:
+        return Colors.grey.shade50;
+    }
+  }
+
+  // Helper method to get status indicator color (solid color for the dot)
+  Color _getStatusIndicatorColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'granted':
+      case 'approved':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'not_granted':
+      case 'rejected':
+        return Colors.red;
+      case 'completed':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Show confirmation dialog for status change
+  void _showStatusChangeDialog(Map<String, dynamic> employee, String newStatus) {
+    String adminNotes = '';
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Change Status'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Employee: ${employee['name']}'),
+            SizedBox(height: 8),
+            Text('Current Status: ${employee['status']}'),
+            SizedBox(height: 8),
+            Text('New Status: $newStatus'),
+            SizedBox(height: 16),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Admin Notes (Optional)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+              onChanged: (value) {
+                adminNotes = value;
+              },
+            ),
+          ],
         ),
-        SizedBox(width: 2),
-        IconButton(
-          onPressed: () {
-            // Edit entry
-          },
-          icon: Icon(Icons.edit, size: 14),
-          padding: EdgeInsets.all(2),
-          constraints: BoxConstraints(minWidth: 28, minHeight: 28),
-          color: Colors.green,
-        ),
-      ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              // Get attendance ID from employee data
+              final attendanceId = employee['attendance_id'] ?? employee['id'];
+              
+              // Update status
+              final success = await widget.controller.updateAttendanceStatus(
+                attendanceId: attendanceId,
+                newStatus: newStatus,
+                adminNotes: adminNotes.isNotEmpty ? adminNotes : 'Status changed by admin',
+                reviewReason: 'Admin review',
+              );
+              
+              if (success) {
+                // Refresh the attendance data
+                await widget.controller.loadAttendanceTableData();
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Status updated successfully')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to update status')),
+                );
+              }
+            },
+            child: Text('Confirm'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -385,26 +540,9 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
     }
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Present':
-        return Colors.green;
-      case 'Absent':
-        return Colors.red;
-      case 'Late':
-        return Colors.orange;
-      case 'Pending':
-        return Colors.blue;
-      case 'Sick Leave':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
-  }
-
   Widget _buildStickyTableHeader() {
-    // Calculate total width: 150+100+80+80+100+80+80 = 670
-    const double totalWidth = 628; // Reduced from 670 to fix 42px overflow
+    // Calculate total width: 140+90+75+75+90+150 = 620
+    const double totalWidth = 620; // Match the data table width
     
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16),
@@ -426,13 +564,12 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
           width: totalWidth,
           child: Row(
             children: [
-              _buildHeaderCell('Employee', 140), // Reduced from 150
-              _buildHeaderCell('Department', 90), // Reduced from 100
-              _buildHeaderCell('Check In', 75), // Reduced from 80
-              _buildHeaderCell('Check Out', 75), // Reduced from 80
-              _buildHeaderCell('Working Hours', 90), // Reduced from 100
-              _buildHeaderCell('Status', 78), // Reduced from 80
-              _buildHeaderCell('Actions', 80), // Same
+              _buildHeaderCell('Employee', 140), // Same
+              _buildHeaderCell('Department', 90), // Same
+              _buildHeaderCell('Check In', 75), // Same
+              _buildHeaderCell('Check Out', 75), // Same
+              _buildHeaderCell('Working Hours', 90), // Same
+              _buildHeaderCell('Status / Actions', 150), // Combined Status and Actions
             ],
           ),
         ),
@@ -481,7 +618,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
         controller: _dataScrollController,
         scrollDirection: Axis.horizontal,
         child: SizedBox(
-          width: 628, // Same width as header (628px total)
+          width: 620, // Updated to match header width (620px total)
           child: Column(
             children: widget.controller.tableAttendanceList.asMap().entries.map((entry) {
               int index = entry.key;
@@ -489,7 +626,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
               
               return Container(
                 decoration: BoxDecoration(
-                  color: index % 2 == 0 ? Colors.grey.shade50 : Colors.white,
+                  color: _getStatusRowColor(employee['status'] ?? '', index),
                   border: Border(
                     bottom: BorderSide(
                       color: Colors.grey.shade200,
@@ -499,13 +636,12 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
                 ),
                 child: Row(
                   children: [
-                    _buildDataCell(_buildEmployeeInfo(employee), 140), // Reduced from 150
-                    _buildDataCell(_buildDepartmentChip(employee['department']), 90), // Reduced from 100
-                    _buildDataCell(_buildTimeText(employee['checkIn']), 75), // Reduced from 80
-                    _buildDataCell(_buildTimeText(employee['checkOut']), 75), // Reduced from 80
-                    _buildDataCell(_buildTimeText(employee['workingHours']), 90), // Reduced from 100
-                    _buildDataCell(_buildStatusChip(employee['status']), 78), // Reduced from 80
-                    _buildDataCell(_buildActionButtons(), 80), // Same
+                    _buildDataCell(_buildEmployeeInfo(employee), 140), // Same
+                    _buildDataCell(_buildDepartmentChip(employee['department']), 90), // Same
+                    _buildDataCell(_buildTimeText(employee['checkIn']), 75), // Same
+                    _buildDataCell(_buildTimeText(employee['checkOut']), 75), // Same
+                    _buildDataCell(_buildTimeText(employee['workingHours']), 90), // Same
+                    _buildDataCell(_buildActionButtons(employee), 150), // Combined Status and Actions
                   ],
                 ),
               );
@@ -514,6 +650,24 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
         ),
       ),
     );
+  }
+
+  // Helper method to get status-based row color
+  Color _getStatusRowColor(String status, int index) {
+    switch (status.toLowerCase()) {
+      case 'granted':
+      case 'approved':
+        return Colors.green.shade50;
+      case 'pending':
+        return Colors.orange.shade50;
+      case 'not_granted':
+      case 'rejected':
+        return Colors.red.shade50;
+      case 'completed':
+        return Colors.blue.shade50;
+      default:
+        return index % 2 == 0 ? Colors.grey.shade50 : Colors.white;
+    }
   }
 
   Widget _buildDataCell(Widget child, double width) {
