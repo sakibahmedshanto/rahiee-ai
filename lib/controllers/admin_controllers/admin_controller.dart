@@ -271,6 +271,7 @@ class AdminController extends GetxController {
           }
           
           return {
+            'attendance_id': record['attendance_id'], // Add the attendance ID
             'name': employee['full_name'] ?? 'Unknown',
             'avatar': (employee['full_name'] ?? 'U').split(' ').map((n) => n[0]).take(2).join().toUpperCase(),
             'department': employee['department'] ?? 'Not Specified',

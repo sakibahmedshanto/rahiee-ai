@@ -427,15 +427,15 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Change Status'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Employee: ${employee['name']}'),
+            Text('Employee: ${employee['name'] ?? 'Unknown'}'),
             SizedBox(height: 8),
-            Text('Current Status: ${employee['status']}'),
+            Text('Current Status: ${employee['status'] ?? 'Unknown'}'),
             SizedBox(height: 8),
             Text('New Status: $newStatus'),
             SizedBox(height: 16),
@@ -453,35 +453,63 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              // Get attendance ID from employee data with null safety
+              final attendanceId = employee['attendance_id'];
               
-              // Get attendance ID from employee data
-              final attendanceId = employee['attendance_id'] ?? employee['id'];
+              if (attendanceId == null || attendanceId.toString().isEmpty) {
+                Navigator.pop(dialogContext);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: Missing attendance ID')),
+                  );
+                }
+                return;
+              }
               
-              // Update status
-              final success = await widget.controller.updateAttendanceStatus(
-                attendanceId: attendanceId,
-                newStatus: newStatus,
-                adminNotes: adminNotes.isNotEmpty ? adminNotes : 'Status changed by admin',
-                reviewReason: 'Admin review',
-              );
+              // Store scaffold messenger reference before closing dialog
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               
-              if (success) {
-                // Refresh the attendance data
-                await widget.controller.loadAttendanceTableData();
+              // Close dialog first
+              Navigator.pop(dialogContext);
+              
+              try {
+                // Update status
+                final success = await widget.controller.updateAttendanceStatus(
+                  attendanceId: attendanceId.toString(),
+                  newStatus: newStatus,
+                  adminNotes: adminNotes.isNotEmpty ? adminNotes : 'Status changed by admin',
+                  reviewReason: 'Admin review',
+                  calculatedAmount: 0.0, // Provide default value
+                  adjustedHours: 0.0, // Provide default value
+                );
                 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Status updated successfully')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed to update status')),
-                );
+                // Check if widget is still mounted before showing messages
+                if (mounted) {
+                  if (success) {
+                    // Refresh the attendance data
+                    await widget.controller.loadAttendanceTableData();
+                    
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(content: Text('Status updated successfully')),
+                    );
+                  } else {
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(content: Text('Failed to update status')),
+                    );
+                  }
+                }
+              } catch (e) {
+                // Handle any errors that might occur
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text('Error: ${e.toString()}')),
+                  );
+                }
               }
             },
             child: Text('Confirm'),
