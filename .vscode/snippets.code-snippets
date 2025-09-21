@@ -1,0 +1,53 @@
+{
+  "Check DB Schema": {
+    "prefix": "checkdb",
+    "body": [
+      "// 🔍 Check database schema before proceeding",
+      "// Primary tables: my_users (id=UUID), attendance (user_id=UUID), employee_schedules (assigned_user_id=UUID)",
+      "// Always use user_id as foreign key to my_users.id, NOT employee_id"
+    ],
+    "description": "Reminder to check database schema"
+  },
+  
+  "Supabase RPC Call": {
+    "prefix": "rpc",
+    "body": [
+      "final response = await _supabase.rpc('${1:function_name}', params: {",
+      "  ${2:// Add parameters here}",
+      "});",
+      "",
+      "if (response.error != null) {",
+      "  throw Exception('${1:function_name} failed: \\${response.error!.message}');",
+      "}",
+      "",
+      "return ${3:response.data};"
+    ],
+    "description": "Supabase RPC function call template"
+  },
+  
+  "User ID Foreign Key": {
+    "prefix": "userid",
+    "body": "user_id", 
+    "description": "Correct foreign key name for my_users table"
+  },
+  
+  "Check Function Exists": {
+    "prefix": "checkfn",
+    "body": [
+      "// ⚠️ Verify this function exists in database:",
+      "// SELECT routine_name FROM information_schema.routines WHERE routine_name = '${1:function_name}';"
+    ],
+    "description": "Reminder to check if function exists"
+  },
+
+  "Primary Key Reference": {
+    "prefix": "pkref",
+    "body": [
+      "// 🔑 Primary Key Reference:",
+      "// my_users.id (UUID) - Main user identifier", 
+      "// attendance.id (UUID) - Attendance record ID",
+      "// employee_schedules.id (UUID) - Schedule ID"
+    ],
+    "description": "Primary key reference guide"
+  }
+}
