@@ -269,44 +269,6 @@ class AdminScheduleService {
     }
   }
 
-  /// Gets schedule statistics for admin dashboard
-  /// 
-  /// Parameters:
-  /// - [adminId]: UUID of the admin requesting statistics
-  /// - [startDate]: Statistics from this date (default: 30 days ago)
-  /// - [endDate]: Statistics until this date (default: 30 days from now)
-  static Future<Map<String, dynamic>> getScheduleStatistics({
-    required String adminId,
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
-    try {
-      final response = await _supabase.rpc('admin_get_schedule_statistics', params: {
-        'p_admin_id': adminId,
-        'p_start_date': startDate?.toIso8601String().split('T')[0],
-        'p_end_date': endDate?.toIso8601String().split('T')[0],
-      });
-
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': response['statistics'] ?? {},
-          'dateRange': response['date_range'] ?? {},
-        };
-      } else {
-        return {
-          'success': false,
-          'error': response['error'] ?? 'Failed to fetch statistics',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'error': 'Error fetching statistics: $e',
-      };
-    }
-  }
-
   /// Checks if a user is available for a given time slot
   /// Uses existing check_schedule_conflict function
   static Future<Map<String, dynamic>> checkScheduleConflict({

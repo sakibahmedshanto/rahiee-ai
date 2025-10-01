@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:rahiee_ai/controllers/admin_controllers/admin_controller.dart';
 import 'services/supabase_service.dart';
 import 'services/schedule_service.dart';
 import 'services/attendance_management_service.dart';
@@ -18,21 +18,16 @@ import 'utils/app_constant.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Supabase first
-  await Supabase.initialize(
-    url: SupabaseService.supabaseUrl,
-    anonKey: SupabaseService.supabaseAnonKey,
-  );
-  
+  // Initialize Supabase in a single place with proper error handling
+  await SupabaseService.initialize();
+
   // Initialize services
   Get.put(SupabaseService());
   Get.put(ScheduleService());
   Get.put(AttendanceManagementService());
   Get.put(LocationPermissionService());
-  
-  // Initialize theme controller
   Get.put(ThemeController());
-  
+  Get.put(AdminController());
   runApp(const MyApp());
 }
 

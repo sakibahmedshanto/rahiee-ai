@@ -31,20 +31,21 @@ class GoogleSignInController extends GetxController {
             accessToken: googleSignInAuthentication.accessToken!,
           );
 
-          if (response.user != null) {
-            final userEmail = response.user!.email!;
-            final userName = response.user!.userMetadata?['full_name'] ?? 
-                            response.user!.userMetadata?['name'] ?? 
+          if (response?.user != null) {
+            final user = response!.user!;
+            final userEmail = user.email!;
+            final userName = user.userMetadata?['full_name'] ?? 
+                            user.userMetadata?['name'] ?? 
                             googleSignInAccount.displayName ?? '';
             
             // Check if user profile exists in our users table
-            UserModel? existingUser = await _getUserDataController.getUserModel(response.user!.id);
+            UserModel? existingUser = await _getUserDataController.getUserModel(user.id);
             
             if (existingUser == null) {
               // Create new user profile in Supabase database
               UserModel userModel = UserModel(
-                uId: response.user!.id,
-                employeeId: 'EMP-${response.user!.id.substring(0, 8).toUpperCase()}',
+                uId: user.id,
+                employeeId: 'EMP-${user.id.substring(0, 8).toUpperCase()}',
                 username: userName,
                 email: userEmail,
                 phone: '',
@@ -52,7 +53,7 @@ class GoogleSignInController extends GetxController {
                 department: 'General',
                 position: 'Employee',
                 userRole: 'employee',
-                userImg: response.user!.userMetadata?['avatar_url'] ?? googleSignInAccount.photoUrl,
+                userImg: user.userMetadata?['avatar_url'] ?? googleSignInAccount.photoUrl,
                 userDeviceToken: '', // Device token removed - can be added later if needed
                 isActive: true,
                 createdOn: DateTime.now(),
@@ -75,7 +76,7 @@ class GoogleSignInController extends GetxController {
             } else {
               // Update existing user's profile image if changed
               UserModel updatedUser = existingUser.copyWith(
-                userImg: response.user!.userMetadata?['avatar_url'] ?? existingUser.userImg,
+                userImg: user.userMetadata?['avatar_url'] ?? existingUser.userImg,
               );
               
               // Only update if profile image actually changed

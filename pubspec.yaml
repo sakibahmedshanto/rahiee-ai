@@ -39,7 +39,8 @@ dependencies:
   flutter_keyboard_visibility: ^6.0.0
   
   # Supabase Dependencies (replacing Firebase)
-  supabase_flutter: ^2.0.0
+  supabase_flutter: ^2.10.1
+
   
   # Keep existing UI dependencies
   lottie: ^3.3.1

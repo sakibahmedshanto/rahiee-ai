@@ -48,7 +48,6 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
   void initState() {
     super.initState();
     widget.scheduleController.loadSchedules();
-    widget.scheduleController.loadScheduleStatistics();
     
     _headerScrollController.addListener(() {
       if (_dataScrollController.hasClients) {

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/unified_schedule_controller.dart';
+import '../../controllers/schedule_exchange_controller.dart';
 import '../../models/schedule_model.dart';
 import '../../utils/app_constant.dart';
+import 'create_exchange_request_screen.dart';
 
 class UnifiedScheduleScreen extends StatelessWidget {
   const UnifiedScheduleScreen({Key? key}) : super(key: key);
@@ -257,6 +259,10 @@ class UnifiedScheduleScreen extends StatelessWidget {
     final canCheckOut = controller.canCheckOutForSchedule(schedule);
     final isCompleted = controller.isScheduleCompleted(schedule);
     
+    // Check if user can create exchange request
+    final exchangeController = Get.put(ScheduleExchangeController());
+    final canCreateExchange = exchangeController.canCreateExchangeRequest(schedule.toMap());
+    
     Color statusColor = AppConstant.textSecondary;
     Color backgroundColor = Colors.transparent;
     Color borderColor = Colors.transparent;
@@ -500,6 +506,36 @@ class UnifiedScheduleScreen extends StatelessWidget {
                 ),
               ],
               
+              // Exchange Request Button (for all eligible schedules)
+              if (canCreateExchange) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showExchangeRequestDialog(schedule),
+                    icon: const Icon(Icons.swap_horiz, size: 16),
+                    label: const Text('Change Schedule'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppConstant.primaryColor,
+                      side: BorderSide(color: AppConstant.primaryColor),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '💡 Tap to request a schedule change with another available user',
+                  style: TextStyle(
+                    color: AppConstant.textSecondary,
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+
               // Action Prompt
               if (controller.isToday) ...[
                 const SizedBox(height: 12),
@@ -736,6 +772,76 @@ class UnifiedScheduleScreen extends StatelessWidget {
             ),
             child: const Text(
               'OK',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExchangeRequestDialog(ScheduleModel schedule) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Change Schedule'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('You want to change your schedule:'),
+            const SizedBox(height: 8),
+            Text(
+              schedule.title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${DateFormat('MMM d, yyyy').format(schedule.startDateTime)} • ${DateFormat('HH:mm').format(schedule.startDateTime)} - ${DateFormat('HH:mm').format(schedule.endDateTime)}',
+              style: const TextStyle(
+                color: AppConstant.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info, color: Colors.blue, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This will send a request to admin for approval. You can select any available user to exchange with.',
+                      style: TextStyle(color: Colors.blue, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              Get.to(() => CreateExchangeRequestScreen(schedule: schedule.toMap()));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppConstant.primaryColor,
+            ),
+            child: const Text(
+              'Continue',
               style: TextStyle(color: Colors.white),
             ),
           ),

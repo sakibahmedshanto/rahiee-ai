@@ -14,16 +14,16 @@ class SignInController extends GetxController {
     try {
       EasyLoading.show(status: "Please wait");
       
-      final AuthResponse response = await _supabaseService.signInWithEmail(
+      final AuthResponse? response = await _supabaseService.signInWithEmail(
         userEmail,
         userPassword,
       );
       
       EasyLoading.dismiss();
       
-      if (response.user != null) {
+      if (response?.user != null) {
         // Check if email is verified
-        if (response.user!.emailConfirmedAt != null) {
+        if (response!.user!.emailConfirmedAt != null) {
           return {
             'success': true,
             'authResponse': response,

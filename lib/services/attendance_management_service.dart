@@ -8,7 +8,16 @@ class AttendanceManagementService extends GetxService {
   static AttendanceManagementService get to => Get.find();
   
   final SupabaseService _supabaseService = SupabaseService.to;
-  final SupabaseClient _supabase = Supabase.instance.client;
+  
+  SupabaseClient get _supabase => _supabaseService.client!;
+
+  SupabaseClient _requireClient() {
+    final client = _supabaseService.client;
+    if (client == null) {
+      throw Exception('Supabase client not initialized');
+    }
+    return client;
+  }
 
   // Observable lists for attendance management
   final RxList<Map<String, dynamic>> pendingApprovals = <Map<String, dynamic>>[].obs;
@@ -42,7 +51,11 @@ class AttendanceManagementService extends GetxService {
       }
 
       // Call the new create_pending_attendance RPC function
-      final response = await _supabase.rpc('create_pending_attendance', params: {
+      if (!_supabaseService.isInitialized) {
+        throw Exception('Supabase service not initialized');
+      }
+      
+      final response = await _requireClient().rpc('create_pending_attendance', params: {
         'p_employee_id': currentUserId,
         'p_schedule_id': scheduleId,
         'p_check_in_lat': latitude,
@@ -104,7 +117,7 @@ class AttendanceManagementService extends GetxService {
         throw Exception('User not authenticated');
       }
 
-      final response = await _supabase.rpc('complete_attendance_checkout', params: {
+      final response = await _requireClient().rpc('complete_attendance_checkout', params: {
         'p_attendance_id': attendanceId,
         'p_employee_id': currentUserId,
         'p_check_out_lat': latitude,
@@ -158,7 +171,7 @@ class AttendanceManagementService extends GetxService {
       final targetEmployeeId = employeeId ?? currentUserId;
       final targetDate = date ?? DateTime.now();
 
-      final response = await _supabase.rpc('get_schedule_attendance_status', params: {
+      final response = await _requireClient().rpc('get_schedule_attendance_status', params: {
         'p_employee_id': targetEmployeeId,
         'p_schedule_id': scheduleId,
         'p_date': targetDate.toIso8601String().split('T')[0],
@@ -190,7 +203,7 @@ class AttendanceManagementService extends GetxService {
       final targetEmployeeId = employeeId ?? currentUserId;
       final targetDate = date ?? DateTime.now();
 
-      final response = await _supabase.rpc('get_schedules_with_attendance_status', params: {
+      final response = await _requireClient().rpc('get_schedules_with_attendance_status', params: {
         'p_employee_id': targetEmployeeId,
         'p_date': targetDate.toIso8601String().split('T')[0],
       });
@@ -231,7 +244,7 @@ class AttendanceManagementService extends GetxService {
       final targetEmployeeId = employeeId ?? currentUserId;
       final targetDate = date ?? DateTime.now();
 
-      final response = await _supabase.rpc('can_check_in_for_schedule', params: {
+      final response = await _requireClient().rpc('can_check_in_for_schedule', params: {
         'p_employee_id': targetEmployeeId,
         'p_schedule_id': scheduleId,
         'p_date': targetDate.toIso8601String().split('T')[0],
@@ -264,7 +277,7 @@ class AttendanceManagementService extends GetxService {
       final targetEmployeeId = employeeId ?? currentUserId;
       final targetDate = date ?? DateTime.now();
 
-      final response = await _supabase.rpc('get_schedule_attendance_status', params: {
+      final response = await _requireClient().rpc('get_schedule_attendance_status', params: {
         'p_employee_id': targetEmployeeId,
         'p_schedule_id': null, // Get most recent attendance for any schedule
         'p_date': targetDate.toIso8601String().split('T')[0],
@@ -293,7 +306,7 @@ class AttendanceManagementService extends GetxService {
       
       final targetEmployeeId = employeeId ?? currentUserId;
 
-      final response = await _supabase.rpc('get_attendance_for_date_range_detailed', params: {
+      final response = await _requireClient().rpc('get_attendance_for_date_range_detailed', params: {
         'p_employee_id': targetEmployeeId,
         'p_start_date': startDate.toIso8601String().split('T')[0],
         'p_end_date': endDate.toIso8601String().split('T')[0],
@@ -325,7 +338,7 @@ class AttendanceManagementService extends GetxService {
     try {
       final currentUserId = _supabaseService.currentUser?.id;
       
-      final response = await _supabase.rpc('get_pending_attendance_for_admin_review', params: {
+      final response = await _requireClient().rpc('get_pending_attendance_for_admin_review', params: {
         'p_admin_id': currentUserId,
         'p_department': department,
         'p_date_from': dateFrom?.toIso8601String().split('T')[0],
@@ -345,7 +358,7 @@ class AttendanceManagementService extends GetxService {
     try {
       final currentUserId = _supabaseService.currentUser?.id;
       
-      final response = await _supabase.rpc('get_pending_attendance_for_admin_review', params: {
+      final response = await _requireClient().rpc('get_pending_attendance_for_admin_review', params: {
         'p_admin_id': currentUserId,
         'p_limit': 100,
       });
@@ -374,7 +387,7 @@ class AttendanceManagementService extends GetxService {
         throw Exception('User not authenticated');
       }
 
-      final response = await _supabase.rpc('admin_update_attendance_status', params: {
+      final response = await _requireClient().rpc('admin_update_attendance_status', params: {
         'p_attendance_id': attendanceId,
         'p_admin_id': currentUserId,
         'p_new_status': newStatus,
@@ -431,7 +444,7 @@ class AttendanceManagementService extends GetxService {
         throw Exception('User not authenticated');
       }
 
-      final response = await _supabase.rpc('bulk_update_attendance_status', params: {
+      final response = await _requireClient().rpc('bulk_update_attendance_status', params: {
         'p_attendance_ids': attendanceIds,
         'p_status': status,
         'p_reviewed_by': currentUserId,
@@ -472,7 +485,7 @@ class AttendanceManagementService extends GetxService {
     try {
       isLoading.value = true;
       
-      final response = await _supabase.rpc('get_attendance_by_date_range', params: {
+      final response = await _requireClient().rpc('get_attendance_by_date_range', params: {
         'p_start_date': (startDate ?? DateTime.now().subtract(const Duration(days: 30))).toIso8601String().split('T')[0],
         'p_end_date': (endDate ?? DateTime.now()).toIso8601String().split('T')[0],
         'p_employee_id': employeeId,
@@ -507,27 +520,26 @@ class AttendanceManagementService extends GetxService {
     }
   }
 
-  // Get attendance metrics and analytics
-  Future<Map<String, dynamic>?> getAttendanceMetrics({
+  /// Gets summary data for swap requests (placeholder - function removed from DB)
+  Future<Map<String, dynamic>?> getSwapSummary({
     DateTime? startDate,
     DateTime? endDate,
-    String? departmentFilter,
   }) async {
     try {
-      final response = await _supabase.rpc('calculate_attendance_metrics', params: {
-        'p_start_date': (startDate ?? DateTime.now().subtract(const Duration(days: 30))).toIso8601String().split('T')[0],
-        'p_end_date': (endDate ?? DateTime.now()).toIso8601String().split('T')[0],
-        'p_department_filter': departmentFilter,
-      });
-
-      return response != null ? Map<String, dynamic>.from(response) : null;
+      // This function was calling get_schedule_swap_summary which was removed
+      // Return empty result for now
+      return {
+        'success': false,
+        'message': 'Swap summary function is not available',
+        'data': [],
+      };
     } catch (e) {
-      print('Error getting attendance metrics: $e');
+      print('Error getting swap summary: $e');
       return null;
     }
   }
 
-  // Create manual attendance entry (for corrections)
+  /// Create manual attendance entry (for corrections)
   Future<Map<String, dynamic>> createManualAttendance({
     required String employeeId,
     required DateTime date,
@@ -966,18 +978,16 @@ class AttendanceManagementService extends GetxService {
     }
   }
 
-  // Get schedule swap summary
+  /// Get schedule swap summary (placeholder - function removed from DB)
   Future<List<Map<String, dynamic>>> getScheduleSwapSummary({
     DateTime? startDate,
     DateTime? endDate,
   }) async {
     try {
-      final response = await _supabase.rpc('get_schedule_swap_summary', params: {
-        'p_start_date': (startDate ?? DateTime.now().subtract(const Duration(days: 30))).toIso8601String().split('T')[0],
-        'p_end_date': (endDate ?? DateTime.now()).toIso8601String().split('T')[0],
-      });
-
-      return List<Map<String, dynamic>>.from(response ?? []);
+      // This function was calling get_schedule_swap_summary which was removed
+      // Return empty result for now since swap functionality doesn't exist
+      print('Schedule swap summary: Function removed from database');
+      return [];
     } catch (e) {
       print('Error getting schedule swap summary: $e');
       return [];
@@ -985,15 +995,15 @@ class AttendanceManagementService extends GetxService {
   }
 
   // Get daily schedule accountability
+  /// Get daily schedule accountability (placeholder - function removed from DB)
   Future<List<Map<String, dynamic>>> getDailyScheduleAccountability({
     DateTime? date,
   }) async {
     try {
-      final response = await _supabase.rpc('get_daily_schedule_accountability', params: {
-        'p_date': (date ?? DateTime.now()).toIso8601String().split('T')[0],
-      });
-
-      return List<Map<String, dynamic>>.from(response ?? []);
+      // This function was calling get_daily_schedule_accountability which was removed
+      // Return empty result for now since the daily_schedule_assignments table doesn't exist
+      print('Daily schedule accountability: Function removed from database');
+      return [];
     } catch (e) {
       print('Error getting daily schedule accountability: $e');
       return [];

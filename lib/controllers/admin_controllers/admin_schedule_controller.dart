@@ -8,7 +8,6 @@ class AdminScheduleController extends GetxController {
   // Observable variables
   var schedules = <Map<String, dynamic>>[].obs;
   var availableUsers = <Map<String, dynamic>>[].obs;
-  var scheduleStatistics = <String, dynamic>{}.obs;
   var isLoading = false.obs;
   var isCreatingSchedule = false.obs;
   var isUpdatingSchedule = false.obs;
@@ -237,33 +236,6 @@ class AdminScheduleController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to load available users: $e');
-    }
-  }
-
-  /// Loads schedule statistics for dashboard
-  Future<void> loadScheduleStatistics({
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
-    if (_adminId == null) {
-      Get.snackbar('Error', 'Admin not authenticated');
-      return;
-    }
-
-    try {
-      final result = await AdminScheduleService.getScheduleStatistics(
-        adminId: _adminId!,
-        startDate: startDate,
-        endDate: endDate,
-      );
-
-      if (result['success']) {
-        scheduleStatistics.value = Map<String, dynamic>.from(result['data']);
-      } else {
-        Get.snackbar('Error', result['error']);
-      }
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to load statistics: $e');
     }
   }
 

@@ -343,6 +343,62 @@ class UnifiedScheduleController extends GetxController {
       
       isLoading.value = true;
       
+      print('DEBUG: Loading schedules for date: ${date.toIso8601String()}');
+      print('DEBUG: Current user ID: ${currentUser.value!.uId}');
+      
+      // Use the RPC function to get schedules with attendance status
+      final response = await _supabaseService.client?.rpc('get_schedules_with_attendance_status', params: {
+        'p_employee_id': currentUser.value!.uId,
+        'p_date': date.toIso8601String().split('T')[0],
+      });
+
+      print('DEBUG: RPC response: $response');
+      print('DEBUG: Response type: ${response.runtimeType}');
+
+      if (response != null) {
+        if (response['schedules'] != null) {
+          final schedulesData = List<Map<String, dynamic>>.from(response['schedules']);
+          print('DEBUG: Found ${schedulesData.length} schedules in response');
+          
+          final List<ScheduleModel> loadedSchedules = [];
+          for (final scheduleData in schedulesData) {
+            try {
+              final schedule = ScheduleModel.fromMap(scheduleData);
+              loadedSchedules.add(schedule);
+              print('DEBUG: Loaded schedule: ${schedule.title} at ${schedule.startDateTime}');
+            } catch (e) {
+              print('ERROR: Failed to parse schedule: $e');
+              print('ERROR: Schedule data was: $scheduleData');
+            }
+          }
+          
+          schedules.value = loadedSchedules;
+          print('DEBUG: Successfully loaded ${loadedSchedules.length} schedules');
+        } else {
+          print('DEBUG: No schedules in response, falling back to direct query');
+          await _loadSchedulesForDateDirect(date);
+        }
+      } else {
+        print('DEBUG: RPC response is null, falling back to direct query');
+        await _loadSchedulesForDateDirect(date);
+      }
+      
+      // After loading schedules, load their attendance status
+      await _loadCurrentAttendanceStatus();
+      
+    } catch (e) {
+      print('ERROR: Exception loading schedules: $e');
+      await _loadSchedulesForDateDirect(date);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Fallback method for direct schedule fetching
+  Future<void> _loadSchedulesForDateDirect(DateTime date) async {
+    try {
+      print('DEBUG: Using fallback direct query for schedules');
+      
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
       
@@ -368,20 +424,19 @@ class UnifiedScheduleController extends GetxController {
       }
       
       schedules.value = loadedSchedules;
+      print('DEBUG: Fallback loaded ${loadedSchedules.length} schedules');
       
       // After loading schedules, load their attendance status
       await _loadCurrentAttendanceStatus();
       
     } catch (e) {
-      print('Error loading schedules: $e');
+      print('Error loading schedules (fallback): $e');
       Get.snackbar(
         'Error',
         'Failed to load schedules: $e',
         backgroundColor: AppConstant.errorColor,
         colorText: Colors.white,
       );
-    } finally {
-      isLoading.value = false;
     }
   }
 

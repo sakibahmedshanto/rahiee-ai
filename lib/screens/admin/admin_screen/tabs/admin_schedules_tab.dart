@@ -5,6 +5,7 @@ import '../../../../controllers/admin_controllers/admin_schedule_controller.dart
 import '../../../../utils/app_constant.dart';
 import 'components/schedule_create_tab.dart';
 import 'components/schedule_table_tab.dart';
+import '../../exchange_request_screen.dart';
 
 class AdminSchedulesTab extends StatefulWidget {
   const AdminSchedulesTab({super.key});
@@ -28,7 +29,7 @@ class _AdminSchedulesTabState extends State<AdminSchedulesTab> {
   Widget build(BuildContext context) {
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         body: Column(
@@ -93,6 +94,18 @@ class _AdminSchedulesTabState extends State<AdminSchedulesTab> {
                       ],
                     ),
                   ),
+                  Tab(
+                    height: 45,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.swap_horiz, size: 20),
+                        SizedBox(width: 6),
+                        Text('Exchanges'),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -110,6 +123,7 @@ class _AdminSchedulesTabState extends State<AdminSchedulesTab> {
                     adminController: adminController,
                     scheduleController: scheduleController,
                   ),
+                  AdminExchangeRequestScreen(),
                 ],
               ),
             ),

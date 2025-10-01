@@ -53,23 +53,35 @@ class ScheduleModel {
 
   // Factory constructor from Supabase map
   factory ScheduleModel.fromMap(Map<String, dynamic> data) {
+    // Handle both direct database response and RPC response
+    final id = data['id']?.toString() ?? data['schedule_id']?.toString() ?? '';
+    final statusValue = data['status']?.toString() ?? data['schedule_status']?.toString() ?? 'active';
+    
+    // Parse dates safely
+    DateTime parseDateTime(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is DateTime) return value;
+      if (value is String) return DateTime.parse(value);
+      return DateTime.now();
+    }
+    
     return ScheduleModel(
-      scheduleId: data['id']?.toString() ?? '',
+      scheduleId: id,
       title: data['title']?.toString() ?? '',
       description: data['description']?.toString() ?? '',
-      startDateTime: DateTime.parse(data['start_date_time']),
-      endDateTime: DateTime.parse(data['end_date_time']),
-      createdByAdminId: data['created_by_admin_id']?.toString() ?? '',
+      startDateTime: parseDateTime(data['start_date_time']),
+      endDateTime: parseDateTime(data['end_date_time']),
+      createdByAdminId: data['created_by_admin_id']?.toString() ?? data['created_by']?.toString() ?? '',
       assignedUserId: data['assigned_user_id']?.toString() ?? '',
       actualUserId: data['actual_user_id']?.toString(),
       department: data['department']?.toString() ?? '',
       location: data['location']?.toString() ?? '',
       latitude: data['latitude']?.toDouble(),
       longitude: data['longitude']?.toDouble(),
-      status: data['status']?.toString() ?? 'active',
+      status: statusValue,
       requirements: data['requirements'] as Map<String, dynamic>?,
-      createdAt: DateTime.parse(data['created_at']),
-      updatedAt: DateTime.parse(data['updated_at']),
+      createdAt: parseDateTime(data['created_at']),
+      updatedAt: parseDateTime(data['updated_at']),
       notes: data['notes']?.toString(),
       isActive: data['is_active'] as bool? ?? true,
       tags: data['tags'] != null ? List<String>.from(data['tags']) : null,

@@ -26,7 +26,7 @@ class SignUpController extends GetxController {
       EasyLoading.show(status: "Please wait");
       
       // Create user account in Supabase Auth
-      final AuthResponse response = await _supabaseService.signUpWithEmail(
+      final AuthResponse? response = await _supabaseService.signUpWithEmail(
         userEmail,
         userPassword,
         data: {
@@ -35,10 +35,10 @@ class SignUpController extends GetxController {
         },
       );
 
-      if (response.user != null) {
-        // Create user profile in the users table
-        UserModel userModel = UserModel(
-          uId: response.user!.id,
+      if (response?.user != null) {
+        // Create user profile in the database
+        final userModel = UserModel(
+          uId: response!.user!.id,
           employeeId: 'EMP-${response.user!.id.substring(0, 8).toUpperCase()}', // Generate employee ID
           username: userName,
           email: userEmail,

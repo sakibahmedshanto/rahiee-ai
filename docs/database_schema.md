@@ -59,15 +59,12 @@
 6. `create_pending_attendance` - Returns JSON
 7. `get_admin_attendance_records` - Returns JSON
 8. `get_admin_schedule_report` - Returns record
-9. `get_attendance_by_date_range` - Returns record
+9. `get_attendance_for_date_range_detailed` - Returns record
 10. `get_attendance_dashboard_summary` - Returns JSON
-11. `get_attendance_for_date_range_detailed` - Returns record
-12. `get_attendance_summary_for_period` - Returns JSON
-13. `get_daily_schedule_accountability` - Returns record
-14. `get_pending_attendance_for_admin_review` - Returns record
-15. `get_schedule_attendance_status` - Returns JSON
-16. `get_schedule_swap_summary` - Returns record
-17. `get_schedules_with_attendance_status` - Returns JSON
+11. `get_attendance_summary_for_period` - Returns JSON
+12. `get_pending_attendance_for_admin_review` - Returns record
+13. `get_schedule_attendance_status` - Returns JSON
+14. `get_schedules_with_attendance_status` - Returns JSON
 18. `calculate_attendance_metrics` - Used by trigger
 
 ### 🆕 New Schedule Management Functions:
@@ -76,7 +73,6 @@
 21. `admin_update_schedule` - Returns JSON - Updates existing schedules
 22. `admin_delete_schedule` - Returns JSON - Soft/hard deletes schedules
 23. `admin_get_available_users` - Returns JSON - Gets users available for assignment
-24. `admin_get_schedule_statistics` - Returns JSON - Schedule stats for dashboard
 
 ### ❌ Missing Functions (Called in code but don't exist):
 - `bulk_update_attendance_status` - Need to create this!

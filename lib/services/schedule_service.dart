@@ -26,8 +26,46 @@ class ScheduleService extends GetxService {
     }
   }
 
-  // Get schedules for a specific user
+  // Get schedules for a specific user with comprehensive exchange support
   Future<List<ScheduleModel>> getSchedulesForUser(
+    String userId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      // Use the correct RPC function that exists in the database
+      final response = await _supabaseService.client?.rpc('get_schedules_with_attendance_status', params: {
+        'p_employee_id': userId,
+        'p_date': startDate?.toIso8601String().split('T')[0] ?? DateTime.now().toIso8601String().split('T')[0],
+      });
+
+      print('DEBUG: RPC response for user schedules: $response');
+      print('DEBUG: Response type: ${response.runtimeType}');
+
+      if (response != null) {
+        // Check if schedules exist in the response
+        if (response['schedules'] != null) {
+          final schedulesData = List<Map<String, dynamic>>.from(response['schedules']);
+          print('DEBUG: Found ${schedulesData.length} schedules in RPC response');
+          return schedulesData
+              .map((data) => ScheduleModel.fromMap(data))
+              .toList();
+        } else {
+          print('DEBUG: No schedules key in response, falling back to direct query');
+          return await _getSchedulesForUserDirect(userId, startDate: startDate, endDate: endDate);
+        }
+      } else {
+        print('DEBUG: RPC response is null, falling back to direct query');
+        return await _getSchedulesForUserDirect(userId, startDate: startDate, endDate: endDate);
+      }
+    } catch (e) {
+      print('❌ Error getting user schedules with RPC: $e');
+      return await _getSchedulesForUserDirect(userId, startDate: startDate, endDate: endDate);
+    }
+  }
+
+  // Fallback method for direct schedule fetching
+  Future<List<ScheduleModel>> _getSchedulesForUserDirect(
     String userId, {
     DateTime? startDate,
     DateTime? endDate,
@@ -51,7 +89,7 @@ class ScheduleService extends GetxService {
           .map((data) => ScheduleModel.fromMap(data))
           .toList();
     } catch (e) {
-      print('❌ Error getting user schedules: $e');
+      print('❌ Error getting user schedules (direct): $e');
       return [];
     }
   }
@@ -185,8 +223,12 @@ class ScheduleService extends GetxService {
   }) async {
     try {
       // Use the SQL function we created
-      final result = await _supabaseService.client
-          .rpc('check_schedule_conflict', params: {
+      final client = _supabaseService.client;
+      if (client == null) {
+        throw Exception('Supabase client not initialized');
+      }
+      
+      final result = await client.rpc('check_schedule_conflict', params: {
         'p_assigned_user_id': userId,
         'p_start_time': startTime.toIso8601String(),
         'p_end_time': endTime.toIso8601String(),
