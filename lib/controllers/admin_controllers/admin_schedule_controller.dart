@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/admin_schedule_service.dart';
+import '../../services/multi_user_schedule_service.dart';
 
 /// Controller for admin schedule management operations
 class AdminScheduleController extends GetxController {
@@ -11,6 +12,8 @@ class AdminScheduleController extends GetxController {
   var isLoading = false.obs;
   var isCreatingSchedule = false.obs;
   var isUpdatingSchedule = false.obs;
+  var isMultiUserMode = false.obs;  // Toggle for multi-user schedules
+  var selectedUsers = <String>[].obs;  // Selected user IDs for multi-user assignment
   
   // Filter variables
   var selectedDepartment = Rxn<String>();
@@ -60,8 +63,8 @@ class AdminScheduleController extends GetxController {
     }
   }
 
-  /// Creates a new schedule
-  Future<void> createSchedule({
+  /// Creates a new schedule and returns result with schedule ID
+  Future<Map<String, dynamic>> createSchedule({
     required String title,
     required DateTime startDateTime,
     required DateTime endDateTime,
@@ -78,7 +81,7 @@ class AdminScheduleController extends GetxController {
   }) async {
     if (_adminId == null) {
       Get.snackbar('Error', 'Admin not authenticated');
-      return;
+      return {'success': false, 'error': 'Admin not authenticated'};
     }
 
     isCreatingSchedule.value = true;
@@ -108,11 +111,20 @@ class AdminScheduleController extends GetxController {
           colorText: Colors.white,
         );
         await loadSchedules(); // Refresh the list
+        
+        // Return the full result including schedule_id from the RPC response
+        return {
+          'success': true,
+          'schedule_id': result['data']?['schedule_id'],
+          'message': result['message'],
+        };
       } else {
         Get.snackbar('Error', result['error']);
+        return {'success': false, 'error': result['error']};
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to create schedule: $e');
+      return {'success': false, 'error': 'Failed to create schedule: $e'};
     } finally {
       isCreatingSchedule.value = false;
     }
@@ -319,4 +331,183 @@ class AdminScheduleController extends GetxController {
   int get totalActiveSchedules => activeSchedules.length;
   int get totalUpcomingSchedules => upcomingSchedules.length;
   int get totalOngoingSchedules => ongoingSchedules.length;
+
+  // ============================================================================
+  // MULTI-USER SCHEDULE METHODS
+  // ============================================================================
+
+  /// Assigns multiple users to a schedule
+  Future<bool> assignMultipleUsersToSchedule({
+    required String scheduleId,
+    required List<String> userIds,
+    String? notes,
+  }) async {
+    if (_adminId == null) {
+      Get.snackbar('Error', 'Admin not authenticated');
+      return false;
+    }
+
+    isLoading.value = true;
+    try {
+      final result = await MultiUserScheduleService.assignUsersToSchedule(
+        scheduleId: scheduleId,
+        userIds: userIds,
+        adminId: _adminId!,
+        notes: notes,
+      );
+
+      if (result['success']) {
+        Get.snackbar(
+          'Success',
+          'Assigned ${result['assigned_count']} user(s) to schedule',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        
+        // Reload schedules to reflect changes
+        await loadSchedules();
+        return true;
+      } else {
+        Get.snackbar('Error', result['error']);
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to assign users: $e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Removes a user from a schedule
+  Future<bool> removeUserFromSchedule({
+    required String scheduleId,
+    required String userId,
+    String? reason,
+  }) async {
+    if (_adminId == null) {
+      Get.snackbar('Error', 'Admin not authenticated');
+      return false;
+    }
+
+    isLoading.value = true;
+    try {
+      final result = await MultiUserScheduleService.removeUserFromSchedule(
+        scheduleId: scheduleId,
+        userId: userId,
+        adminId: _adminId!,
+        reason: reason,
+      );
+
+      if (result['success']) {
+        Get.snackbar(
+          'Success',
+          result['message'],
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        
+        // Reload schedules to reflect changes
+        await loadSchedules();
+        return true;
+      } else {
+        Get.snackbar('Error', result['error']);
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to remove user: $e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Gets schedule with all assigned users
+  Future<Map<String, dynamic>?> getScheduleWithAssignments(String scheduleId) async {
+    try {
+      final result = await MultiUserScheduleService.getScheduleWithAssignments(
+        scheduleId: scheduleId,
+      );
+
+      if (result['success']) {
+        final schedulesList = result['schedules'] as List;
+        if (schedulesList.isNotEmpty) {
+          return schedulesList.first as Map<String, dynamic>;
+        }
+      }
+      return null;
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load schedule details: $e');
+      return null;
+    }
+  }
+
+  /// Gets available users for a schedule (no conflicts)
+  Future<List<Map<String, dynamic>>> getAvailableUsersForSchedule({
+    required String scheduleId,
+    String? department,
+  }) async {
+    try {
+      final result = await MultiUserScheduleService.getAvailableUsersForSchedule(
+        scheduleId: scheduleId,
+        department: department,
+      );
+
+      if (result['success']) {
+        return List<Map<String, dynamic>>.from(result['available_users']);
+      } else {
+        Get.snackbar('Error', result['error']);
+        return [];
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load available users: $e');
+      return [];
+    }
+  }
+
+  /// Gets all assignments for a specific schedule
+  Future<List<Map<String, dynamic>>> getScheduleAssignments(String scheduleId) async {
+    try {
+      final result = await MultiUserScheduleService.getScheduleAssignments(
+        scheduleId: scheduleId,
+      );
+
+      if (result['success']) {
+        return List<Map<String, dynamic>>.from(result['assignments']);
+      } else {
+        Get.snackbar('Error', result['error']);
+        return [];
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load assignments: $e');
+      return [];
+    }
+  }
+
+  /// Toggles multi-user mode
+  void toggleMultiUserMode(bool value) {
+    isMultiUserMode.value = value;
+    if (!value) {
+      selectedUsers.clear();
+    }
+  }
+
+  /// Toggles user selection for multi-user assignment
+  void toggleUserSelection(String userId) {
+    if (selectedUsers.contains(userId)) {
+      selectedUsers.remove(userId);
+    } else {
+      selectedUsers.add(userId);
+    }
+  }
+
+  /// Clears selected users
+  void clearSelectedUsers() {
+    selectedUsers.clear();
+  }
+
+  /// Checks if a user is selected
+  bool isUserSelected(String userId) {
+    return selectedUsers.contains(userId);
+  }
 }

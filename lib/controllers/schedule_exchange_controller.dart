@@ -130,11 +130,31 @@ class ScheduleExchangeController extends GetxController {
       );
 
       if (result['success']) {
+        // Show appropriate success message based on action
+        String successTitle = 'Success!';
+        String successMessage = result['message'] ?? 'Operation completed successfully';
+        
+        if (action == 'approve') {
+          successTitle = '✅ Request Approved!';
+          successMessage = 'Schedule exchange request has been approved successfully. Users have been notified.';
+        } else if (action == 'reject') {
+          successTitle = '❌ Request Rejected';
+          successMessage = 'Schedule exchange request has been rejected. User has been notified.';
+        } else if (action == 'cancel') {
+          successTitle = '🚫 Request Cancelled';
+          successMessage = 'Schedule exchange request has been cancelled successfully.';
+        }
+        
         Get.snackbar(
-          'Success', 
-          result['message'],
+          successTitle, 
+          successMessage,
           backgroundColor: Colors.green.withOpacity(0.8),
           colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          icon: const Icon(Icons.check_circle, color: Colors.white),
         );
         await loadExchangeRequests(isAdmin: isAdmin); // Refresh the list
         
@@ -145,7 +165,17 @@ class ScheduleExchangeController extends GetxController {
           print('DEBUG: Schedule exchange approved - schedules should be refreshed');
         }
       } else {
-        Get.snackbar('Error', result['error']);
+        Get.snackbar(
+          'Error', 
+          result['error'] ?? 'Operation failed',
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          icon: const Icon(Icons.error, color: Colors.white),
+        );
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to $action exchange request: $e');

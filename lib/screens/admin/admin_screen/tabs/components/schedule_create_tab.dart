@@ -30,6 +30,8 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
   
   // Form State Variables
   String? _selectedUserId;
+  List<String> _selectedUserIds = []; // For multi-user assignment
+  bool _isMultiUserMode = false; // Toggle for multi-user
   String? _selectedDepartment;
   DateTime? _startDateTime;
   DateTime? _endDateTime;
@@ -37,6 +39,8 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
   double? _longitude;
   List<String> _tags = [];
   final TextEditingController _tagController = TextEditingController();
+  int? _maxParticipants; // Max users for multi-user schedules
+  int _minParticipants = 1; // Min users required
 
   // Dropdown Options
   final List<String> _departments = [
@@ -117,7 +121,21 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
                 title: 'Employee Assignment',
                 icon: Icons.person_outline,
                 children: [
-                  _buildUserDropdown(),
+                  // Multi-user toggle
+                  _buildMultiUserToggle(),
+                  SizedBox(height: 16),
+                  
+                  // User selection (single or multi)
+                  _isMultiUserMode 
+                    ? _buildMultiUserSelection()
+                    : _buildUserDropdown(),
+                  
+                  // Participant limits for multi-user
+                  if (_isMultiUserMode) ...[
+                    SizedBox(height: 16),
+                    _buildParticipantLimits(),
+                  ],
+                  
                   SizedBox(height: 16),
                   _buildDepartmentDropdown(),
                 ],
@@ -401,6 +419,270 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
                   return null;
                 }
               : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMultiUserToggle() {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppConstant.primaryColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppConstant.primaryColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _isMultiUserMode ? Icons.people : Icons.person,
+            color: AppConstant.primaryColor,
+            size: 24,
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Allow Multiple Users',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppConstant.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Enable multi-user assignment for this schedule',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppConstant.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _isMultiUserMode,
+            onChanged: (value) {
+              setState(() {
+                _isMultiUserMode = value;
+                if (!value) {
+                  _selectedUserIds.clear();
+                  _maxParticipants = null;
+                  _minParticipants = 1;
+                }
+              });
+            },
+            activeColor: AppConstant.primaryColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultiUserSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Assign Employees *',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppConstant.textPrimary,
+              ),
+            ),
+            Text(
+              '${_selectedUserIds.length} selected',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppConstant.primaryColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _showMultiUserSelectionDialog,
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.people,
+                      color: AppConstant.primaryColor,
+                      size: 20,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _selectedUserIds.isEmpty
+                            ? 'Tap to select employees'
+                            : '${_selectedUserIds.length} employee(s) selected',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: _selectedUserIds.isEmpty
+                              ? AppConstant.textSecondary
+                              : AppConstant.textPrimary,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: AppConstant.textSecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        
+        // Show selected users
+        if (_selectedUserIds.isNotEmpty) ...[
+          SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _selectedUserIds.map((userId) {
+              final user = widget.scheduleController.availableUsers
+                  .firstWhere((u) => u['id'] == userId, orElse: () => {});
+              final userName = user['full_name'] ?? 'Unknown';
+              
+              return Chip(
+                avatar: CircleAvatar(
+                  backgroundColor: AppConstant.primaryColor.withOpacity(0.1),
+                  child: Text(
+                    userName[0].toUpperCase(),
+                    style: TextStyle(
+                      color: AppConstant.primaryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                label: Text(userName),
+                deleteIcon: Icon(Icons.close, size: 18),
+                onDeleted: () {
+                  setState(() {
+                    _selectedUserIds.remove(userId);
+                  });
+                },
+                backgroundColor: Colors.white,
+                shape: StadiumBorder(
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildParticipantLimits() {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Min Participants',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppConstant.textPrimary,
+                ),
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                initialValue: _minParticipants.toString(),
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.people_outline, size: 20),
+                  hintText: 'Min users',
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppConstant.primaryColor, width: 2),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onChanged: (value) {
+                  _minParticipants = int.tryParse(value) ?? 1;
+                },
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Max Participants',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppConstant.textPrimary,
+                ),
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                initialValue: _maxParticipants?.toString() ?? '',
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.people, size: 20),
+                  hintText: 'Max users (optional)',
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppConstant.primaryColor, width: 2),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onChanged: (value) {
+                  _maxParticipants = value.isEmpty ? null : int.tryParse(value);
+                },
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -810,6 +1092,120 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
     });
   }
 
+  void _showMultiUserSelectionDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.people, color: AppConstant.primaryColor),
+            SizedBox(width: 8),
+            Text('Select Employees'),
+          ],
+        ),
+        content: Container(
+          width: double.maxFinite,
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Obx(() {
+            if (widget.scheduleController.availableUsers.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'No employees available',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    SizedBox(height: 8),
+                    TextButton.icon(
+                      icon: Icon(Icons.refresh),
+                      label: Text('Refresh'),
+                      onPressed: () => widget.scheduleController.loadAvailableUsers(),
+                    ),
+                  ],
+                ),
+              );
+            }
+            
+            return ListView.builder(
+              shrinkWrap: true,
+              itemCount: widget.scheduleController.availableUsers.length,
+              itemBuilder: (context, index) {
+                final user = widget.scheduleController.availableUsers[index];
+                final userId = user['id'] as String;
+                final isSelected = _selectedUserIds.contains(userId);
+                
+                return CheckboxListTile(
+                  value: isSelected,
+                  onChanged: (selected) {
+                    setState(() {
+                      if (selected == true) {
+                        _selectedUserIds.add(userId);
+                      } else {
+                        _selectedUserIds.remove(userId);
+                      }
+                    });
+                  },
+                  title: Text(
+                    user['full_name'] ?? 'Unknown',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (user['email'] != null)
+                        Text(user['email'], style: TextStyle(fontSize: 12)),
+                      if (user['department'] != null)
+                        Text(
+                          '${user['department']} - ${user['position'] ?? 'Employee'}',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                    ],
+                  ),
+                  secondary: CircleAvatar(
+                    backgroundColor: isSelected
+                        ? AppConstant.primaryColor
+                        : Colors.grey.shade300,
+                    child: Text(
+                      (user['full_name'] ?? 'U')[0].toUpperCase(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  activeColor: AppConstant.primaryColor,
+                );
+              },
+            );
+          }),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            icon: Icon(Icons.check, color: Colors.white),
+            label: Text(
+              'Done (${_selectedUserIds.length})',
+              style: TextStyle(color: Colors.white),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppConstant.primaryColor,
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            onPressed: () {
+              setState(() {}); // Update UI
+              Get.back();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   void _resetForm() {
     _formKey.currentState?.reset();
     setState(() {
@@ -820,6 +1216,10 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
       _requirementsController.clear();
       _tagController.clear();
       _selectedUserId = null;
+      _selectedUserIds.clear();
+      _isMultiUserMode = false;
+      _maxParticipants = null;
+      _minParticipants = 1;
       _selectedDepartment = null;
       _startDateTime = null;
       _endDateTime = null;
@@ -844,14 +1244,49 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
       return;
     }
 
-    if (_selectedUserId == null) {
-      Get.snackbar(
-        'Missing Information',
-        'Please select an employee to assign',
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-      );
-      return;
+    // Validate user assignment
+    if (_isMultiUserMode) {
+      if (_selectedUserIds.isEmpty) {
+        Get.snackbar(
+          'Missing Information',
+          'Please select at least one employee to assign',
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+        return;
+      }
+      
+      // Validate minimum participants
+      if (_selectedUserIds.length < _minParticipants) {
+        Get.snackbar(
+          'Invalid Selection',
+          'Please select at least $_minParticipants employee(s)',
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+        return;
+      }
+      
+      // Validate maximum participants
+      if (_maxParticipants != null && _selectedUserIds.length > _maxParticipants!) {
+        Get.snackbar(
+          'Invalid Selection',
+          'Maximum $_maxParticipants employee(s) allowed',
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+        return;
+      }
+    } else {
+      if (_selectedUserId == null) {
+        Get.snackbar(
+          'Missing Information',
+          'Please select an employee to assign',
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+        return;
+      }
     }
 
     // Parse requirements JSON if provided
@@ -872,11 +1307,12 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
       }
     }
 
-    await widget.scheduleController.createSchedule(
+    // Create schedule
+    final scheduleResult = await widget.scheduleController.createSchedule(
       title: _titleController.text.trim(),
       startDateTime: _startDateTime!,
       endDateTime: _endDateTime!,
-      assignedUserId: _selectedUserId!,
+      assignedUserId: _isMultiUserMode ? _selectedUserIds.first : _selectedUserId!,
       department: _selectedDepartment!,
       location: _locationController.text.trim(),
       description: _descriptionController.text.trim().isNotEmpty
@@ -891,8 +1327,55 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
       tags: _tags.isNotEmpty ? _tags : null,
     );
 
+    // If multi-user mode and schedule created successfully, assign additional users
+    if (_isMultiUserMode && scheduleResult['success'] == true) {
+      final scheduleId = scheduleResult['schedule_id']?.toString();
+      
+      if (scheduleId != null && scheduleId.isNotEmpty) {
+        // Assign all selected users
+        final assignResult = await widget.scheduleController.assignMultipleUsersToSchedule(
+          scheduleId: scheduleId,
+          userIds: _selectedUserIds,
+          notes: 'Multi-user schedule created with ${_selectedUserIds.length} employees',
+        );
+        
+        if (assignResult) {
+          Get.snackbar(
+            'Success',
+            'Multi-user schedule created and ${_selectedUserIds.length} employee(s) assigned',
+            backgroundColor: Colors.green.withOpacity(0.8),
+            colorText: Colors.white,
+            duration: Duration(seconds: 3),
+          );
+        }
+      } else {
+        // Schedule ID not found in response, try to get it from the list
+        await Future.delayed(Duration(milliseconds: 500));
+        if (widget.scheduleController.schedules.isNotEmpty) {
+          final newSchedule = widget.scheduleController.schedules.last;
+          final fallbackScheduleId = newSchedule['id']?.toString();
+          
+          if (fallbackScheduleId != null && fallbackScheduleId.isNotEmpty) {
+            await widget.scheduleController.assignMultipleUsersToSchedule(
+              scheduleId: fallbackScheduleId,
+              userIds: _selectedUserIds,
+              notes: 'Multi-user schedule created with ${_selectedUserIds.length} employees',
+            );
+          } else {
+            Get.snackbar(
+              'Partial Success',
+              'Schedule created, but could not assign additional users. Please assign them manually from the schedule list.',
+              backgroundColor: Colors.orange.withOpacity(0.8),
+              colorText: Colors.white,
+              duration: Duration(seconds: 4),
+            );
+          }
+        }
+      }
+    }
+
     // Reset form on success
-    if (widget.scheduleController.schedules.isNotEmpty) {
+    if (scheduleResult['success'] == true) {
       _resetForm();
     }
   }
