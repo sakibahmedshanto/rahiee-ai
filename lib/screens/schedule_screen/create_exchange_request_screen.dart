@@ -513,12 +513,17 @@ class _CreateExchangeRequestScreenState extends State<CreateExchangeRequestScree
               if (result['success']) {
                 // Show success message and navigate back
                 Get.snackbar(
-                  'Success!',
-                  result['message'] ?? 'Schedule change request submitted successfully',
-                  backgroundColor: Colors.green.withOpacity(0.8),
+                  '✅ Request Submitted!',
+                  'Your schedule exchange request has been submitted successfully. You will be notified when the admin reviews your request.',
+                  backgroundColor: Colors.green.withOpacity(0.9),
                   colorText: Colors.white,
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
-                  duration: const Duration(seconds: 3),
+                  icon: const Icon(Icons.check_circle, color: Colors.white, size: 28),
+                  duration: const Duration(seconds: 4),
+                  snackPosition: SnackPosition.TOP,
+                  margin: const EdgeInsets.all(16),
+                  borderRadius: 8,
+                  isDismissible: true,
+                  dismissDirection: DismissDirection.horizontal,
                 );
                 
                 // Navigate back to schedule screen
@@ -526,12 +531,17 @@ class _CreateExchangeRequestScreenState extends State<CreateExchangeRequestScree
               } else {
                 // Show error message
                 Get.snackbar(
-                  'Error',
+                  '❌ Submission Failed',
                   result['error'] ?? 'Failed to submit schedule change request. Please try again.',
-                  backgroundColor: Colors.red.withOpacity(0.8),
+                  backgroundColor: Colors.red.withOpacity(0.9),
                   colorText: Colors.white,
-                  icon: const Icon(Icons.error, color: Colors.white),
+                  icon: const Icon(Icons.error, color: Colors.white, size: 28),
                   duration: const Duration(seconds: 4),
+                  snackPosition: SnackPosition.TOP,
+                  margin: const EdgeInsets.all(16),
+                  borderRadius: 8,
+                  isDismissible: true,
+                  dismissDirection: DismissDirection.horizontal,
                 );
               }
             },
