@@ -41,6 +41,10 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
   final TextEditingController _tagController = TextEditingController();
   int? _maxParticipants; // Max users for multi-user schedules
   int _minParticipants = 1; // Min users required
+  
+  // UI State Management
+  bool _isDialogOpen = false; // Prevent multiple dialogs
+  DateTime? _lastTapTime; // For debouncing taps
 
   // Dropdown Options
   final List<String> _departments = [
@@ -68,6 +72,7 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
     _notesController.dispose();
     _requirementsController.dispose();
     _tagController.dispose();
+    _isDialogOpen = false; // Reset dialog state
     super.dispose();
   }
 
@@ -518,7 +523,12 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap: _showMultiUserSelectionDialog,
+              onTap: () {
+                // Prevent double-tapping
+                if (!_isDialogOpen) {
+                  _showMultiUserSelectionDialog();
+                }
+              },
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Row(
@@ -1093,116 +1103,216 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
   }
 
   void _showMultiUserSelectionDialog() {
+    // Prevent multiple dialogs and debounce rapid taps
+    if (_isDialogOpen) return;
+    
+    final now = DateTime.now();
+    if (_lastTapTime != null && now.difference(_lastTapTime!).inMilliseconds < 300) {
+      return; // Debounce rapid taps
+    }
+    _lastTapTime = now;
+    
+    _isDialogOpen = true;
+    
+    // Create a local copy of selected users for the dialog
+    final Set<String> tempSelectedUsers = Set<String>.from(_selectedUserIds);
+    
     Get.dialog(
-      AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.people, color: AppConstant.primaryColor),
-            SizedBox(width: 8),
-            Text('Select Employees'),
-          ],
-        ),
-        content: Container(
-          width: double.maxFinite,
-          height: MediaQuery.of(context).size.height * 0.6,
-          child: Obx(() {
-            if (widget.scheduleController.availableUsers.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.people_outline, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'No employees available',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    SizedBox(height: 8),
-                    TextButton.icon(
-                      icon: Icon(Icons.refresh),
-                      label: Text('Refresh'),
-                      onPressed: () => widget.scheduleController.loadAvailableUsers(),
-                    ),
-                  ],
-                ),
-              );
-            }
-            
-            return ListView.builder(
-              shrinkWrap: true,
-              itemCount: widget.scheduleController.availableUsers.length,
-              itemBuilder: (context, index) {
-                final user = widget.scheduleController.availableUsers[index];
-                final userId = user['id'] as String;
-                final isSelected = _selectedUserIds.contains(userId);
-                
-                return CheckboxListTile(
-                  value: isSelected,
-                  onChanged: (selected) {
-                    setState(() {
-                      if (selected == true) {
-                        _selectedUserIds.add(userId);
-                      } else {
-                        _selectedUserIds.remove(userId);
-                      }
-                    });
-                  },
-                  title: Text(
-                    user['full_name'] ?? 'Unknown',
-                    style: TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (user['email'] != null)
-                        Text(user['email'], style: TextStyle(fontSize: 12)),
-                      if (user['department'] != null)
+      StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.people, color: AppConstant.primaryColor),
+                SizedBox(width: 8),
+                Text('Select Employees'),
+              ],
+            ),
+            content: Container(
+              width: double.maxFinite,
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Obx(() {
+                if (widget.scheduleController.availableUsers.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
                         Text(
-                          '${user['department']} - ${user['position'] ?? 'Employee'}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          'No employees available',
+                          style: TextStyle(color: Colors.grey),
                         ),
-                    ],
-                  ),
-                  secondary: CircleAvatar(
-                    backgroundColor: isSelected
-                        ? AppConstant.primaryColor
-                        : Colors.grey.shade300,
-                    child: Text(
-                      (user['full_name'] ?? 'U')[0].toUpperCase(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                        SizedBox(height: 8),
+                        TextButton.icon(
+                          icon: Icon(Icons.refresh),
+                          label: Text('Refresh'),
+                          onPressed: () => widget.scheduleController.loadAvailableUsers(),
+                        ),
+                      ],
                     ),
-                  ),
-                  activeColor: AppConstant.primaryColor,
+                  );
+                }
+                
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: widget.scheduleController.availableUsers.length,
+                  itemBuilder: (context, index) {
+                    final user = widget.scheduleController.availableUsers[index];
+                    final userId = user['id'] as String;
+                    final isSelected = tempSelectedUsers.contains(userId);
+                    
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setDialogState(() {
+                            if (isSelected) {
+                              tempSelectedUsers.remove(userId);
+                            } else {
+                              tempSelectedUsers.add(userId);
+                            }
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        splashColor: AppConstant.primaryColor.withOpacity(0.1),
+                        highlightColor: AppConstant.primaryColor.withOpacity(0.05),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: [
+                              AnimatedContainer(
+                                duration: Duration(milliseconds: 200),
+                                curve: Curves.easeInOut,
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isSelected
+                                      ? AppConstant.primaryColor
+                                      : Colors.grey.shade300,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    (user['full_name'] ?? 'U')[0].toUpperCase(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      user['full_name'] ?? 'Unknown',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    if (user['email'] != null)
+                                      Text(
+                                        user['email'],
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    if (user['department'] != null)
+                                      Text(
+                                        '${user['department']} - ${user['position'] ?? 'Employee'}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              AnimatedContainer(
+                                duration: Duration(milliseconds: 200),
+                                curve: Curves.easeInOut,
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected 
+                                        ? AppConstant.primaryColor 
+                                        : Colors.grey.shade400,
+                                    width: 2,
+                                  ),
+                                  color: isSelected 
+                                      ? AppConstant.primaryColor 
+                                      : Colors.transparent,
+                                ),
+                                child: isSelected
+                                    ? Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 16,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 );
-              },
-            );
-          }),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            icon: Icon(Icons.check, color: Colors.white),
-            label: Text(
-              'Done (${_selectedUserIds.length})',
-              style: TextStyle(color: Colors.white),
+              }),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppConstant.primaryColor,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            onPressed: () {
-              setState(() {}); // Update UI
-              Get.back();
-            },
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () {
+                  _isDialogOpen = false;
+                  Get.back();
+                },
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              ElevatedButton.icon(
+                icon: Icon(Icons.check, color: Colors.white, size: 18),
+                label: Text(
+                  'Done (${tempSelectedUsers.length})',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConstant.primaryColor,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  // Update the main state with selected users
+                  setState(() {
+                    _selectedUserIds = tempSelectedUsers.toList();
+                  });
+                  _isDialogOpen = false;
+                  Get.back();
+                },
+              ),
+            ],
+          );
+        },
       ),
+      barrierDismissible: false,
     );
   }
 
