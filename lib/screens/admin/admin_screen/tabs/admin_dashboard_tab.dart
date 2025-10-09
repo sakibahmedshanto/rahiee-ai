@@ -6,6 +6,7 @@ import '../../../../controllers/admin_controllers/admin_controller.dart';
 import '../../../../utils/app_constant.dart';
 import '../components/dashboard_stats_cards.dart';
 import '../components/dashboard_chart_widget.dart';
+import '../components/attendance_pie_chart_widget.dart';
 import '../components/quick_actions_widget.dart';
 import '../components/recent_activity_widget.dart';
 
@@ -40,6 +41,11 @@ class AdminDashboardTab extends StatelessWidget {
               
               // Stats cards
               DashboardStatsCards(),
+              
+              SizedBox(height: 24),
+              
+              // Attendance Status Pie Chart - Matching the image
+              AttendancePieChartWidget(),
               
               SizedBox(height: 24),
               

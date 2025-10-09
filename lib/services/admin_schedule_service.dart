@@ -4,14 +4,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AdminScheduleService {
   static final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// Creates a new schedule
+  /// Creates a new schedule (without assignment)
   /// 
   /// Required parameters:
   /// - [adminId]: UUID of the admin creating the schedule
   /// - [title]: Schedule title 
   /// - [startDateTime]: Schedule start time
   /// - [endDateTime]: Schedule end time
-  /// - [assignedUserId]: UUID of user assigned to this schedule
   /// - [department]: Department for this schedule
   /// - [location]: Location of the schedule
   /// 
@@ -22,12 +21,14 @@ class AdminScheduleService {
   /// - [notes]: Additional notes
   /// - [tags]: Array of tags
   /// - [customFields]: JSON object with custom fields
+  /// - [isMultiUser]: Whether this schedule can have multiple users
+  /// - [maxParticipants]: Maximum number of participants (for multi-user schedules)
+  /// - [minParticipants]: Minimum number of participants (for multi-user schedules)
   static Future<Map<String, dynamic>> createSchedule({
     required String adminId,
     required String title,
     required DateTime startDateTime,
     required DateTime endDateTime,
-    required String assignedUserId,
     required String department,
     required String location,
     String? description,
@@ -37,6 +38,9 @@ class AdminScheduleService {
     String? notes,
     List<String>? tags,
     Map<String, dynamic>? customFields,
+    bool isMultiUser = false,
+    int? maxParticipants,
+    int? minParticipants,
   }) async {
     try {
       final response = await _supabase.rpc('admin_create_schedule', params: {
@@ -44,7 +48,6 @@ class AdminScheduleService {
         'p_title': title,
         'p_start_date_time': startDateTime.toIso8601String(),
         'p_end_date_time': endDateTime.toIso8601String(),
-        'p_assigned_user_id': assignedUserId,
         'p_department': department,
         'p_location': location,
         'p_description': description,
@@ -54,6 +57,9 @@ class AdminScheduleService {
         'p_notes': notes,
         'p_tags': tags,
         'p_custom_fields': customFields,
+        'p_is_multi_user': isMultiUser,
+        'p_max_participants': maxParticipants,
+        'p_min_participants': minParticipants,
       });
 
       if (response['success'] == true) {
@@ -140,7 +146,6 @@ class AdminScheduleService {
     String? description,
     DateTime? startDateTime,
     DateTime? endDateTime,
-    String? assignedUserId,
     String? department,
     String? location,
     double? latitude,
@@ -150,6 +155,9 @@ class AdminScheduleService {
     String? notes,
     List<String>? tags,
     Map<String, dynamic>? customFields,
+    bool? isMultiUser,
+    int? maxParticipants,
+    int? minParticipants,
   }) async {
     try {
       final response = await _supabase.rpc('admin_update_schedule', params: {
@@ -159,7 +167,6 @@ class AdminScheduleService {
         'p_description': description,
         'p_start_date_time': startDateTime?.toIso8601String(),
         'p_end_date_time': endDateTime?.toIso8601String(),
-        'p_assigned_user_id': assignedUserId,
         'p_department': department,
         'p_location': location,
         'p_latitude': latitude,
@@ -169,6 +176,9 @@ class AdminScheduleService {
         'p_notes': notes,
         'p_tags': tags,
         'p_custom_fields': customFields,
+        'p_is_multi_user': isMultiUser,
+        'p_max_participants': maxParticipants,
+        'p_min_participants': minParticipants,
       });
 
       if (response['success'] == true) {

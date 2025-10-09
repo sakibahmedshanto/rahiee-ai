@@ -125,3 +125,4 @@ GRANT EXECUTE ON FUNCTION get_user_attendance_history TO authenticated;
 -- Get next page (pagination)
 -- SELECT get_user_attendance_history('user-uuid-here', NULL, NULL, NULL, 20, 20);
 
+

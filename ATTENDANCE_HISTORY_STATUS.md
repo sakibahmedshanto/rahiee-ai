@@ -161,3 +161,4 @@ The app has **smart fallback logic**:
 
 **The attendance history feature is fully functional - you just need to create some attendance records to see them!** 🎉
 
+

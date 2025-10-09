@@ -175,13 +175,8 @@ BEGIN
             notes = 'Re-assigned via approved exchange request',
             updated_at = NOW();
 
-        -- Also update the old employee_schedules.assigned_user_id for backward compatibility
-        -- Only if it's a single-user schedule
-        UPDATE employee_schedules
-        SET assigned_user_id = v_request.requested_user_id,
-            updated_at = NOW()
-        WHERE id = v_request.schedule_id
-        AND (is_multi_user = false OR is_multi_user IS NULL);
+        -- NOTE: assigned_user_id column has been removed - all assignments now use schedule_assignments table
+        -- No backward compatibility update needed
 
         -- Update the exchange request status
         UPDATE schedule_exchange_requests

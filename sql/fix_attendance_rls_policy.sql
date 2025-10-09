@@ -20,3 +20,7 @@ FROM pg_policies
 WHERE tablename = 'attendance'
 ORDER BY policyname;
 
+
+
+
+

@@ -13,38 +13,41 @@ class AdminSummaryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final AdminController controller = Get.find<AdminController>();
 
-    return Obx(() => Padding(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with filter options
-          _buildHeader(controller),
-          
-          SizedBox(height: 16),
-          
-          // Filter chips
-          _buildFilterChips(controller),
-          
-          SizedBox(height: 16),
-          
-          // Date range selector
-          _buildDateRangeSelector(controller, context),
-          
-          SizedBox(height: 20),
-          
-          // Summary stats cards
-          _buildSummaryStats(controller),
-          
-          SizedBox(height: 20),
-          
-          // Data table
-          Expanded(
-            child: _buildDataTable(controller),
-          ),
-        ],
-      ),
-    ));
+    return RefreshIndicator(
+      onRefresh: () => controller.loadSummaryReportsData(),
+      child: Obx(() => Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with filter options
+            _buildHeader(controller),
+            
+            SizedBox(height: 16),
+            
+            // Filter chips
+            _buildFilterChips(controller),
+            
+            SizedBox(height: 16),
+            
+            // Date range selector
+            _buildDateRangeSelector(controller, context),
+            
+            SizedBox(height: 20),
+            
+            // Summary stats cards
+            _buildSummaryStats(controller),
+            
+            SizedBox(height: 20),
+            
+            // Data table
+            Expanded(
+              child: _buildDataTable(controller),
+            ),
+          ],
+        ),
+      )),
+    );
   }
 
   Widget _buildHeader(AdminController controller) {
@@ -79,20 +82,17 @@ class AdminSummaryTab extends StatelessWidget {
     return Wrap(
       spacing: 8,
       children: [
-        _buildFilterChip('Daily', controller.selectedTimeRange.value == 'Daily', () {
-          controller.selectedTimeRange.value = 'Daily';
-          controller.loadSummaryData();
+        _buildFilterChip('Daily', controller.selectedSummaryTimeRange.value == 'Daily', () {
+          controller.updateSummaryTimeRange('Daily');
         }),
-        _buildFilterChip('Weekly', controller.selectedTimeRange.value == 'Weekly', () {
-          controller.selectedTimeRange.value = 'Weekly';
-          controller.loadSummaryData();
+        _buildFilterChip('Weekly', controller.selectedSummaryTimeRange.value == 'Weekly', () {
+          controller.updateSummaryTimeRange('Weekly');
         }),
-        _buildFilterChip('Monthly', controller.selectedTimeRange.value == 'Monthly', () {
-          controller.selectedTimeRange.value = 'Monthly';
-          controller.loadSummaryData();
+        _buildFilterChip('Monthly', controller.selectedSummaryTimeRange.value == 'Monthly', () {
+          controller.updateSummaryTimeRange('Monthly');
         }),
-        _buildFilterChip('Custom Range', controller.selectedTimeRange.value == 'Custom', () {
-          controller.selectedTimeRange.value = 'Custom';
+        _buildFilterChip('Custom Range', controller.selectedSummaryTimeRange.value == 'Custom', () {
+          controller.updateSummaryTimeRange('Custom');
         }),
       ],
     );
@@ -116,7 +116,7 @@ class AdminSummaryTab extends StatelessWidget {
   }
 
   Widget _buildDateRangeSelector(AdminController controller, BuildContext context) {
-    if (controller.selectedTimeRange.value != 'Custom') {
+    if (controller.selectedSummaryTimeRange.value != 'Custom') {
       return SizedBox.shrink();
     }
 
@@ -168,36 +168,43 @@ class AdminSummaryTab extends StatelessWidget {
   }
 
   Widget _buildSummaryStats(AdminController controller) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            title: 'Total Records',
-            value: '${_getSummaryData(controller).length}',
-            icon: Icons.receipt_long,
-            color: AppConstant.primaryColor,
+    return Obx(() {
+      final stats = controller.summaryReportsStats;
+      final totalRecords = stats['totalRecords'] ?? 0;
+      final avgAttendance = stats['avgAttendance'] ?? 0;
+      final totalHours = stats['totalHours'] ?? 0;
+
+      return Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              title: 'Total Records',
+              value: totalRecords.toString(),
+              icon: Icons.receipt_long,
+              color: AppConstant.primaryColor,
+            ),
           ),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            title: 'Avg Attendance',
-            value: '${_calculateAverageAttendance(controller).toStringAsFixed(1)}%',
-            icon: Icons.trending_up,
-            color: AppConstant.successColor,
+          SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              title: 'Avg Attendance',
+              value: '${avgAttendance}%',
+              icon: Icons.trending_up,
+              color: AppConstant.successColor,
+            ),
           ),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            title: 'Total Hours',
-            value: '${_calculateTotalHours(controller)}',
-            icon: Icons.schedule,
-            color: AppConstant.infoColor,
+          SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              title: 'Total Hours',
+              value: totalHours.toString(),
+              icon: Icons.schedule,
+              color: AppConstant.infoColor,
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildStatCard({
@@ -239,11 +246,20 @@ class AdminSummaryTab extends StatelessWidget {
   }
 
   Widget _buildDataTable(AdminController controller) {
-    final summaryData = _getSummaryData(controller);
-    
-    if (summaryData.isEmpty) {
-      return _buildEmptyState();
-    }
+    return Obx(() {
+      final summaryData = controller.summaryReportsData;
+      
+      if (controller.isSummaryReportsLoading.value) {
+        return Center(
+          child: CircularProgressIndicator(
+            color: AppConstant.primaryColor,
+          ),
+        );
+      }
+      
+      if (summaryData.isEmpty) {
+        return _buildEmptyState();
+      }
 
     return Container(
       decoration: BoxDecoration(
@@ -422,6 +438,7 @@ class AdminSummaryTab extends StatelessWidget {
         ],
       ),
     );
+    });
   }
 
   Widget _buildEmptyState() {
@@ -459,7 +476,7 @@ class AdminSummaryTab extends StatelessWidget {
 
   // Helper methods
   List<String> _getTableHeaders(AdminController controller) {
-    switch (controller.selectedTimeRange.value) {
+    switch (controller.selectedSummaryTimeRange.value) {
       case 'Daily':
         return ['Date', 'Attendance', 'Hours', 'Status'];
       case 'Weekly':
@@ -471,94 +488,6 @@ class AdminSummaryTab extends StatelessWidget {
     }
   }
 
-  List<Map<String, dynamic>> _getSummaryData(AdminController controller) {
-    // Mock data - replace with actual data from controller
-    final range = controller.selectedTimeRange.value;
-    
-    switch (range) {
-      case 'Daily':
-        return _generateDailyData();
-      case 'Weekly':
-        return _generateWeeklyData();
-      case 'Monthly':
-        return _generateMonthlyData();
-      default:
-        return _generateDailyData();
-    }
-  }
-
-  List<Map<String, dynamic>> _generateDailyData() {
-    final now = DateTime.now();
-    return List.generate(30, (index) {
-      final date = now.subtract(Duration(days: index));
-      final attendanceRate = 75 + (index % 25); // Mock data
-      final totalHours = 8 + (index % 4);
-      
-      return {
-        'period': _formatDate(date),
-        'subPeriod': _formatDayOfWeek(date),
-        'attendanceRate': attendanceRate,
-        'present': (attendanceRate * 0.2).round(),
-        'total': 20,
-        'totalHours': totalHours,
-        'status': attendanceRate >= 90 ? 'Excellent' : attendanceRate >= 75 ? 'Good' : 'Needs Improvement',
-      };
-    });
-  }
-
-  List<Map<String, dynamic>> _generateWeeklyData() {
-    final now = DateTime.now();
-    return List.generate(12, (index) {
-      final weekStart = now.subtract(Duration(days: (index * 7) + now.weekday - 1));
-      final weekEnd = weekStart.add(Duration(days: 6));
-      final attendanceRate = 80 + (index % 20);
-      
-      return {
-        'period': 'Week ${52 - index}',
-        'subPeriod': '${_formatShortDate(weekStart)} - ${_formatShortDate(weekEnd)}',
-        'attendanceRate': attendanceRate,
-        'present': (attendanceRate * 1.4).round(),
-        'total': 140,
-        'totalHours': 40 + (index % 8),
-        'status': attendanceRate >= 90 ? 'Excellent' : attendanceRate >= 75 ? 'Good' : 'Needs Improvement',
-      };
-    });
-  }
-
-  List<Map<String, dynamic>> _generateMonthlyData() {
-    final now = DateTime.now();
-    final months = ['January', 'February', 'March', 'April', 'May', 'June',
-                   'July', 'August', 'September', 'October', 'November', 'December'];
-    
-    return List.generate(12, (index) {
-      final monthIndex = (now.month - 1 - index) % 12;
-      final year = now.year - (now.month - 1 - index < 0 ? 1 : 0);
-      final attendanceRate = 78 + (index % 22);
-      
-      return {
-        'period': months[monthIndex],
-        'subPeriod': year.toString(),
-        'attendanceRate': attendanceRate,
-        'present': (attendanceRate * 6).round(),
-        'total': 600,
-        'totalHours': 160 + (index % 40),
-        'status': attendanceRate >= 90 ? 'Excellent' : attendanceRate >= 75 ? 'Good' : 'Needs Improvement',
-      };
-    });
-  }
-
-  double _calculateAverageAttendance(AdminController controller) {
-    final data = _getSummaryData(controller);
-    if (data.isEmpty) return 0.0;
-    
-    final total = data.fold<int>(0, (sum, item) => sum + (item['attendanceRate'] as int));
-    return total / data.length;
-  }
-
-  int _calculateTotalHours(AdminController controller) {
-    final data = _getSummaryData(controller);
-    return data.fold<int>(0, (sum, item) => sum + (item['totalHours'] as int));
-  }
 
   Color _getAttendanceColor(int rate) {
     if (rate >= 90) return AppConstant.successColor;
@@ -581,14 +510,6 @@ class AdminSummaryTab extends StatelessWidget {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  String _formatShortDate(DateTime date) {
-    return '${date.day}/${date.month}';
-  }
-
-  String _formatDayOfWeek(DateTime date) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return days[date.weekday - 1];
-  }
 
   void _showDateRangePicker(BuildContext context, AdminController controller) {
     showDialog(
@@ -598,7 +519,7 @@ class AdminSummaryTab extends StatelessWidget {
         initialEndDate: DateTime.now(),
         onDateRangeSelected: (startDate, endDate) {
           // Update controller with selected date range
-          controller.loadSummaryData();
+          controller.loadSummaryReportsData();
           Get.snackbar(
             'Date Range Updated',
             'Showing data from ${_formatDate(startDate)} to ${_formatDate(endDate)}',

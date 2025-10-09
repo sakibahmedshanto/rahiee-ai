@@ -140,20 +140,30 @@ class ScheduleExchangeService {
 
       print('DEBUG: Found ${usersResponse.length} active employee users (excluding requester)');
 
-      // Get users who have conflicts during the schedule time
-      final conflictingUsersResponse = await _supabase
-          .from('employee_schedules')
-          .select('assigned_user_id')
+      // Get users who have conflicts during the schedule time using schedule_assignments
+      final conflictingAssignmentsResponse = await _supabase
+          .from('schedule_assignments')
+          .select('''
+            user_id,
+            schedule_id,
+            employee_schedules!inner(
+              start_date_time,
+              end_date_time,
+              is_active,
+              status
+            )
+          ''')
           .eq('is_active', true)
-          .eq('status', 'active')
-          .lte('start_date_time', scheduleResponse['end_date_time'])
-          .gte('end_date_time', scheduleResponse['start_date_time']);
+          .eq('employee_schedules.is_active', true)
+          .eq('employee_schedules.status', 'active')
+          .lte('employee_schedules.start_date_time', scheduleResponse['end_date_time'])
+          .gte('employee_schedules.end_date_time', scheduleResponse['start_date_time']);
 
-      print('DEBUG: Found ${conflictingUsersResponse.length} conflicting schedules');
+      print('DEBUG: Found ${conflictingAssignmentsResponse.length} conflicting schedule assignments');
 
       // Extract conflicting user IDs
-      final conflictingUserIds = conflictingUsersResponse
-          .map((schedule) => schedule['assigned_user_id'])
+      final conflictingUserIds = conflictingAssignmentsResponse
+          .map((assignment) => assignment['user_id'])
           .toSet();
 
       // Filter users who don't have conflicts

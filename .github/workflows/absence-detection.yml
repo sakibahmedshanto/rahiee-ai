@@ -1,0 +1,52 @@
+name: Hourly Absence Detection
+
+on:
+  schedule:
+    # Run every hour at minute 0
+    - cron: '0 * * * *'
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  absence-detection:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Call Supabase Edge Function
+        run: |
+          echo "🕐 Triggering hourly absence detection..."
+          
+          # Call the Supabase Edge Function
+          response=$(curl -s -X POST \
+            "https://YOUR_SUPABASE_PROJECT_REF.supabase.co/functions/v1/hourly-absence-detection" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP_STATUS:%{http_code}")
+          
+          # Extract response and status code
+          http_status=$(echo "$response" | grep "HTTP_STATUS:" | cut -d: -f2)
+          response_body=$(echo "$response" | sed '/HTTP_STATUS:/d')
+          
+          echo "Response Status: $http_status"
+          echo "Response Body: $response_body"
+          
+          # Check if the request was successful
+          if [ "$http_status" -eq 200 ]; then
+            echo "✅ Absence detection completed successfully"
+            echo "$response_body" | jq '.'
+          else
+            echo "❌ Absence detection failed with status: $http_status"
+            echo "$response_body"
+            exit 1
+          fi
+          
+        env:
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          
+      - name: Log Execution
+        if: always()
+        run: |
+          echo "📊 Execution completed at $(date)"
+          echo "GitHub Action Run ID: ${{ github.run_id }}"
+          echo "GitHub Action Run Number: ${{ github.run_number }}"
+

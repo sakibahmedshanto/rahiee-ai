@@ -68,7 +68,6 @@ class AdminScheduleController extends GetxController {
     required String title,
     required DateTime startDateTime,
     required DateTime endDateTime,
-    required String assignedUserId,
     required String department,
     required String location,
     String? description,
@@ -78,6 +77,9 @@ class AdminScheduleController extends GetxController {
     String? notes,
     List<String>? tags,
     Map<String, dynamic>? customFields,
+    bool isMultiUser = false,
+    int? maxParticipants,
+    int? minParticipants,
   }) async {
     if (_adminId == null) {
       Get.snackbar('Error', 'Admin not authenticated');
@@ -91,7 +93,6 @@ class AdminScheduleController extends GetxController {
         title: title,
         startDateTime: startDateTime,
         endDateTime: endDateTime,
-        assignedUserId: assignedUserId,
         department: department,
         location: location,
         description: description,
@@ -101,6 +102,9 @@ class AdminScheduleController extends GetxController {
         notes: notes,
         tags: tags,
         customFields: customFields,
+        isMultiUser: isMultiUser,
+        maxParticipants: maxParticipants,
+        minParticipants: minParticipants,
       );
 
       if (result['success']) {
@@ -137,7 +141,6 @@ class AdminScheduleController extends GetxController {
     String? description,
     DateTime? startDateTime,
     DateTime? endDateTime,
-    String? assignedUserId,
     String? department,
     String? location,
     double? latitude,
@@ -147,6 +150,9 @@ class AdminScheduleController extends GetxController {
     String? notes,
     List<String>? tags,
     Map<String, dynamic>? customFields,
+    bool? isMultiUser,
+    int? maxParticipants,
+    int? minParticipants,
   }) async {
     if (_adminId == null) {
       Get.snackbar('Error', 'Admin not authenticated');
@@ -162,7 +168,6 @@ class AdminScheduleController extends GetxController {
         description: description,
         startDateTime: startDateTime,
         endDateTime: endDateTime,
-        assignedUserId: assignedUserId,
         department: department,
         location: location,
         latitude: latitude,
@@ -172,6 +177,9 @@ class AdminScheduleController extends GetxController {
         notes: notes,
         tags: tags,
         customFields: customFields,
+        isMultiUser: isMultiUser,
+        maxParticipants: maxParticipants,
+        minParticipants: minParticipants,
       );
 
       if (result['success']) {

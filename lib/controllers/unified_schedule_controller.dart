@@ -6,6 +6,7 @@ import '../models/attendance_model.dart';
 import '../services/supabase_service.dart';
 import '../services/attendance_management_service.dart';
 import '../services/location_permission_service.dart';
+import '../screens/attendance_screen/camera_check_in_screen.dart';
 import '../utils/app_constant.dart';
 
 class UnifiedScheduleController extends GetxController {
@@ -402,24 +403,30 @@ class UnifiedScheduleController extends GetxController {
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
       
-      final List<Map<String, dynamic>> schedulesData = await _supabaseService.select(
-        'employee_schedules',
-        gte: 'start_date_time',
-        gteValue: startOfDay.toIso8601String(),
-        lte: 'start_date_time',
-        lteValue: endOfDay.toIso8601String(),
-        eq: 'assigned_user_id',
-        eqValue: currentUser.value!.uId,
-        orderBy: 'start_date_time',
-      );
+      // Query via schedule_assignments instead of assigned_user_id
+      final assignmentsData = await _supabaseService.client
+          ?.from('schedule_assignments')
+          .select('''
+            schedule_id,
+            employee_schedules!inner(*)
+          ''')
+          .eq('user_id', currentUser.value!.uId)
+          .eq('is_active', true)
+          .eq('status', 'active')
+          .gte('employee_schedules.start_date_time', startOfDay.toIso8601String())
+          .lte('employee_schedules.start_date_time', endOfDay.toIso8601String())
+          .order('employee_schedules.start_date_time', ascending: true);
       
       final List<ScheduleModel> loadedSchedules = [];
-      for (final scheduleData in schedulesData) {
-        try {
-          final schedule = ScheduleModel.fromMap(scheduleData);
-          loadedSchedules.add(schedule);
-        } catch (e) {
-          print('Error parsing schedule: $e');
+      if (assignmentsData != null) {
+        for (final assignment in assignmentsData) {
+          try {
+            final scheduleData = assignment['employee_schedules'] as Map<String, dynamic>;
+            final schedule = ScheduleModel.fromMap(scheduleData);
+            loadedSchedules.add(schedule);
+          } catch (e) {
+            print('Error parsing schedule: $e');
+          }
         }
       }
       
@@ -459,66 +466,29 @@ class UnifiedScheduleController extends GetxController {
           duration: const Duration(seconds: 4),
           snackPosition: SnackPosition.TOP,
         );
+        isCheckingIn.value = false;
         return;
       }
       
-      Get.dialog(
-        const Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Checking you in...'),
-                ],
-              ),
-            ),
-          ),
+      // Open camera screen for uniform verification
+      Get.to(
+        () => CameraCheckInScreen(
+          scheduleId: schedule.scheduleId,
+          scheduleTitle: schedule.title,
+          onCheckInComplete: () async {
+            // Refresh data after successful check-in
+            await refreshData();
+            _showCheckOutReminder();
+          },
         ),
-        barrierDismissible: false,
+        arguments: {
+          'scheduleTitle': schedule.title,
+        },
       );
-
-      // Get current location
-      final location = await _locationService.getCurrentLocation();
-      
-      final result = await _attendanceService.clockIn(
-        scheduleId: schedule.scheduleId,
-        latitude: location?.latitude ?? 0.0,
-        longitude: location?.longitude ?? 0.0,
-        address: 'Work Location',
-      );
-
-      Get.back(); // Close loading dialog
-
-      if (result['success'] == true) {
-        // Success feedback
-        Get.snackbar(
-          'Success! 🎉',
-          'You have successfully checked in for ${schedule.title}',
-          backgroundColor: AppConstant.successColor,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-          snackPosition: SnackPosition.TOP,
-        );
-        
-        // Refresh data to update UI
-        await refreshData();
-        
-        // Show important reminder
-        _showCheckOutReminder();
-        
-      } else {
-        throw Exception(result['message'] ?? 'Check-in failed');
-      }
       
     } catch (e) {
-      Get.back(); // Close loading dialog if open
-      
       Get.snackbar(
-        'Check-in Failed ❌',
+        'Error',
         e.toString(),
         backgroundColor: AppConstant.errorColor,
         colorText: Colors.white,
@@ -543,73 +513,38 @@ class UnifiedScheduleController extends GetxController {
           backgroundColor: AppConstant.errorColor,
           colorText: Colors.white,
         );
+        isCheckingOut.value = false;
         return;
       }
       
       final attendanceId = attendanceStatus['attendance_id'].toString();
       
-      Get.dialog(
-        const Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Checking you out...'),
-                ],
-              ),
-            ),
-          ),
+      // Navigate to the same camera screen used for check-in (with checkout mode)
+      isCheckingOut.value = false; // Reset before navigation
+      Get.to(
+        () => CameraCheckInScreen(
+          scheduleId: attendanceId, // Will be ignored in checkout mode
+          scheduleTitle: schedule.title,
+          onCheckInComplete: () async {
+            await refreshData();
+          },
         ),
-        barrierDismissible: false,
+        arguments: {
+          'attendanceId': attendanceId,
+          'scheduleTitle': schedule.title,
+        },
       );
-
-      // Get current location
-      final location = await _locationService.getCurrentLocation();
-      
-      final result = await _attendanceService.clockOut(
-        attendanceId: attendanceId,
-        latitude: location?.latitude ?? 0.0,
-        longitude: location?.longitude ?? 0.0,
-        address: 'Work Location',
-      );
-
-      Get.back(); // Close loading dialog
-
-      if (result['success'] == true) {
-        final hours = result['total_hours']?.toDouble() ?? 0.0;
-        
-        // Success feedback with work summary
-        Get.snackbar(
-          'Great Work! 🎉',
-          'You completed ${schedule.title} - ${hours.toStringAsFixed(2)} hours worked',
-          backgroundColor: AppConstant.successColor,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 4),
-          snackPosition: SnackPosition.TOP,
-        );
-        
-        // Refresh data to update UI
-        await refreshData();
-        
-      } else {
-        throw Exception(result['message'] ?? 'Check-out failed');
-      }
       
     } catch (e) {
-      print('Error checking out: $e');
+      print('Error navigating to checkout camera: $e');
       Get.snackbar(
         'Error',
-        'Failed to check out: $e',
+        'Failed to open camera: $e',
         backgroundColor: AppConstant.errorColor,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
         snackPosition: SnackPosition.TOP,
       );
-    } finally {
       isCheckingOut.value = false;
     }
   }

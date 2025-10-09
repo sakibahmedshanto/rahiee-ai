@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:get/get.dart';
 import '../../../../../controllers/admin_controllers/admin_controller.dart';
 import '../../../../../utils/app_constant.dart';
 
@@ -13,14 +14,30 @@ class AttendanceSummaryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Quick Stats Row
-          _buildQuickStatsRow(),
-          SizedBox(height: 24),
+    return Obx(() {
+      if (controller.isSummaryLoading.value) {
+        return Center(
+          child: CircularProgressIndicator(
+            color: AppConstant.primaryColor,
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        onRefresh: () => controller.loadSummaryData(),
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - 200,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              // Quick Stats Row
+              _buildQuickStatsRow(),
+              SizedBox(height: 24),
           
           // Charts Section
           Column(
@@ -45,12 +62,17 @@ class AttendanceSummaryTab extends StatelessWidget {
           
           // Recent Activity
           _buildRecentActivity(),
-        ],
-      ),
-    );
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildQuickStatsRow() {
+    final todayData = controller.todayData;
+    
     return Column(
       children: [
         Row(
@@ -58,22 +80,22 @@ class AttendanceSummaryTab extends StatelessWidget {
             Expanded(
               child: _buildStatCard(
                 title: 'Today\'s Check-ins',
-                value: '42',
+                value: '${todayData['total_present'] ?? 0}',
                 icon: Icons.login,
                 color: Colors.green,
-                trend: '+12%',
-                trendUp: true,
+                trend: controller.getCheckInsTrend(),
+                trendUp: controller.getCheckInsTrend().startsWith('+'),
               ),
             ),
             SizedBox(width: 8),
             Expanded(
               child: _buildStatCard(
                 title: 'Pending Approvals',
-                value: '8',
+                value: '${todayData['pending_approvals'] ?? 0}',
                 icon: Icons.pending_actions,
                 color: Colors.orange,
-                trend: '-5%',
-                trendUp: false,
+                trend: controller.getPendingTrend(),
+                trendUp: controller.getPendingTrend().startsWith('+'),
               ),
             ),
           ],
@@ -84,18 +106,18 @@ class AttendanceSummaryTab extends StatelessWidget {
             Expanded(
               child: _buildStatCard(
                 title: 'Late Arrivals',
-                value: '3',
+                value: '${todayData['total_late'] ?? 0}',
                 icon: Icons.access_time,
                 color: Colors.red,
-                trend: '+2',
-                trendUp: true,
+                trend: controller.getLateTrend(),
+                trendUp: controller.getLateTrend().startsWith('+'),
               ),
             ),
             SizedBox(width: 8),
             Expanded(
               child: _buildStatCard(
                 title: 'Active Sessions',
-                value: '35',
+                value: '${todayData['currently_active'] ?? 0}',
                 icon: Icons.person_outline,
                 color: Colors.blue,
                 trend: 'Live',
@@ -198,6 +220,65 @@ class AttendanceSummaryTab extends StatelessWidget {
   }
 
   Widget _buildAttendanceStatusChart() {
+    final todayData = controller.todayData;
+    
+    // Calculate real percentages from data
+    final totalPresent = (todayData['total_present'] ?? 0) as int;
+    final totalPending = (todayData['pending_approvals'] ?? 0) as int;
+    final totalAbsent = (todayData['total_absent'] ?? 0) as int;
+    final totalLate = (todayData['total_late'] ?? 0) as int;
+    
+    final total = totalPresent + totalPending + totalAbsent + totalLate;
+    
+    if (total == 0) {
+      return Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              'Attendance Status',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppConstant.textPrimary,
+              ),
+            ),
+            SizedBox(height: 40),
+            Icon(
+              Icons.pie_chart_outline,
+              size: 48,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No attendance data today',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final presentPercentage = (totalPresent / total * 100);
+    final pendingPercentage = (totalPending / total * 100);
+    final absentPercentage = (totalAbsent / total * 100);
+    final latePercentage = (totalLate / total * 100);
+
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -215,13 +296,47 @@ class AttendanceSummaryTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Attendance Status',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppConstant.textPrimary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Attendance Status',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstant.textPrimary,
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Live',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 20),
           SizedBox(
@@ -229,71 +344,75 @@ class AttendanceSummaryTab extends StatelessWidget {
             child: PieChart(
               PieChartData(
                 sections: [
-                  PieChartSectionData(
-                    value: 65,
-                    title: '65%',
-                    color: Colors.green,
-                    radius: 60,
-                    titleStyle: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  if (presentPercentage > 0)
+                    PieChartSectionData(
+                      value: presentPercentage,
+                      title: '${presentPercentage.toStringAsFixed(0)}%',
+                      color: Colors.green,
+                      radius: 60,
+                      titleStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  PieChartSectionData(
-                    value: 20,
-                    title: '20%',
-                    color: Colors.orange,
-                    radius: 60,
-                    titleStyle: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  if (pendingPercentage > 0)
+                    PieChartSectionData(
+                      value: pendingPercentage,
+                      title: '${pendingPercentage.toStringAsFixed(0)}%',
+                      color: Colors.orange,
+                      radius: 60,
+                      titleStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  PieChartSectionData(
-                    value: 10,
-                    title: '10%',
-                    color: Colors.red,
-                    radius: 60,
-                    titleStyle: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  if (absentPercentage > 0)
+                    PieChartSectionData(
+                      value: absentPercentage,
+                      title: '${absentPercentage.toStringAsFixed(0)}%',
+                      color: Colors.red,
+                      radius: 60,
+                      titleStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  PieChartSectionData(
-                    value: 5,
-                    title: '5%',
-                    color: Colors.grey,
-                    radius: 60,
-                    titleStyle: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  if (latePercentage > 0)
+                    PieChartSectionData(
+                      value: latePercentage,
+                      title: '${latePercentage.toStringAsFixed(0)}%',
+                      color: Colors.grey,
+                      radius: 60,
+                      titleStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
                 ],
                 borderData: FlBorderData(show: false),
-                sectionsSpace: 4,
-                centerSpaceRadius: 0,
+                sectionsSpace: 2,
+                centerSpaceRadius: 40,
               ),
             ),
           ),
           SizedBox(height: 16),
-          _buildLegend(),
+          _buildLegend(presentPercentage, pendingPercentage, absentPercentage, latePercentage),
         ],
       ),
     );
   }
 
-  Widget _buildLegend() {
+  Widget _buildLegend(double present, double pending, double absent, double late) {
     return Column(
       children: [
-        _buildLegendItem('Present', Colors.green, '65%'),
-        _buildLegendItem('Pending', Colors.orange, '20%'),
-        _buildLegendItem('Absent', Colors.red, '10%'),
-        _buildLegendItem('Late', Colors.grey, '5%'),
+        if (present > 0) _buildLegendItem('Present', Colors.green, '${present.toStringAsFixed(1)}%'),
+        if (pending > 0) _buildLegendItem('Pending', Colors.orange, '${pending.toStringAsFixed(1)}%'),
+        if (absent > 0) _buildLegendItem('Absent', Colors.red, '${absent.toStringAsFixed(1)}%'),
+        if (late > 0) _buildLegendItem('Late', Colors.grey, '${late.toStringAsFixed(1)}%'),
       ],
     );
   }
@@ -334,6 +453,52 @@ class AttendanceSummaryTab extends StatelessWidget {
   }
 
   Widget _buildDepartmentChart() {
+    final departmentData = controller.departmentData;
+    
+    if (departmentData.isEmpty) {
+      return Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              'Department Breakdown',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppConstant.textPrimary,
+              ),
+            ),
+            SizedBox(height: 40),
+            Icon(
+              Icons.business_outlined,
+              size: 48,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No department data available',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -360,11 +525,35 @@ class AttendanceSummaryTab extends StatelessWidget {
             ),
           ),
           SizedBox(height: 20),
-          _buildDepartmentBar('Engineering', 85, Colors.blue),
-          _buildDepartmentBar('Marketing', 75, Colors.purple),
-          _buildDepartmentBar('Sales', 90, Colors.green),
-          _buildDepartmentBar('HR', 95, Colors.orange),
-          _buildDepartmentBar('Finance', 80, Colors.red),
+          ...departmentData.map((dept) {
+            final stats = dept['stats'] as Map<String, dynamic>? ?? {};
+            final attendanceRate = (stats['attendance_rate'] ?? 0.0) as double;
+            final departmentName = dept['department'] as String;
+            
+            // Assign colors based on department name
+            Color color = Colors.blue;
+            switch (departmentName.toLowerCase()) {
+              case 'engineering':
+                color = Colors.blue;
+                break;
+              case 'marketing':
+                color = Colors.purple;
+                break;
+              case 'sales':
+                color = Colors.green;
+                break;
+              case 'hr':
+                color = Colors.orange;
+                break;
+              case 'finance':
+                color = Colors.red;
+                break;
+              default:
+                color = Colors.blue;
+            }
+            
+            return _buildDepartmentBar(departmentName, attendanceRate, color);
+          }).toList(),
         ],
       ),
     );
@@ -440,17 +629,17 @@ class AttendanceSummaryTab extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: _buildTimeMetric('Avg. Check-in', '09:15 AM', Icons.login, Colors.green)),
+                  Expanded(child: _buildTimeMetric('Avg. Check-in', controller.avgCheckInTime, Icons.login, Colors.green)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTimeMetric('Avg. Check-out', '06:30 PM', Icons.logout, Colors.blue)),
+                  Expanded(child: _buildTimeMetric('Avg. Check-out', controller.avgCheckOutTime, Icons.logout, Colors.blue)),
                 ],
               ),
               SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: _buildTimeMetric('Avg. Working Hrs', '8h 45m', Icons.schedule, Colors.purple)),
+                  Expanded(child: _buildTimeMetric('Avg. Working Hrs', controller.avgWorkingHours, Icons.schedule, Colors.purple)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTimeMetric('Peak Hours', '10-11 AM', Icons.trending_up, Colors.orange)),
+                  Expanded(child: _buildTimeMetric('Peak Hours', controller.peakHours, Icons.trending_up, Colors.orange)),
                 ],
               ),
             ],
@@ -498,6 +687,7 @@ class AttendanceSummaryTab extends StatelessWidget {
 
   Widget _buildWeeklyTrendChart() {
     return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -514,29 +704,112 @@ class AttendanceSummaryTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Weekly Attendance Trend',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppConstant.textPrimary,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Weekly Attendance Trend',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppConstant.textPrimary,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        SizedBox(width: 3),
+                        Text(
+                          'Live',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              Spacer(),
-              Text(
-                'Last 7 days',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppConstant.textPrimary.withOpacity(0.6),
-                ),
+              SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: controller.weeklyTrendDirection == 'up' 
+                          ? Colors.green.withOpacity(0.1)
+                          : controller.weeklyTrendDirection == 'down'
+                              ? Colors.red.withOpacity(0.1)
+                              : Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          controller.weeklyTrendDirection == 'up'
+                              ? Icons.trending_up
+                              : controller.weeklyTrendDirection == 'down'
+                                  ? Icons.trending_down
+                                  : Icons.trending_flat,
+                          size: 10,
+                          color: controller.weeklyTrendDirection == 'up'
+                              ? Colors.green
+                              : controller.weeklyTrendDirection == 'down'
+                                  ? Colors.red
+                                  : Colors.grey,
+                        ),
+                        SizedBox(width: 2),
+                        Text(
+                          '${controller.currentWeekAvgAttendance.toStringAsFixed(1)}% avg',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: controller.weeklyTrendDirection == 'up'
+                                ? Colors.green
+                                : controller.weeklyTrendDirection == 'down'
+                                    ? Colors.red
+                                    : Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Last 7 days',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppConstant.textPrimary.withOpacity(0.6),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 16),
           SizedBox(
-            height: 200,
+            height: 180,
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(show: false),
@@ -553,11 +826,12 @@ class AttendanceSummaryTab extends StatelessWidget {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 30,
                       getTitlesWidget: (value, meta) {
                         const style = TextStyle(
                           color: Colors.grey,
                           fontWeight: FontWeight.w500,
-                          fontSize: 12,
+                          fontSize: 10,
                         );
                         String text = '';
                         switch (value.toInt()) {
@@ -583,7 +857,10 @@ class AttendanceSummaryTab extends StatelessWidget {
                             text = 'Sun';
                             break;
                         }
-                        return Text(text, style: style);
+                        return Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text(text, style: style),
+                        );
                       },
                     ),
                   ),
@@ -591,15 +868,19 @@ class AttendanceSummaryTab extends StatelessWidget {
                 borderData: FlBorderData(show: false),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: [
-                      FlSpot(0, 85),
-                      FlSpot(1, 78),
-                      FlSpot(2, 92),
-                      FlSpot(3, 88),
-                      FlSpot(4, 95),
-                      FlSpot(5, 72),
-                      FlSpot(6, 45),
-                    ],
+                    spots: controller.weeklyAttendanceData.isEmpty 
+                        ? [
+                            FlSpot(0, 0),
+                            FlSpot(1, 0),
+                            FlSpot(2, 0),
+                            FlSpot(3, 0),
+                            FlSpot(4, 0),
+                            FlSpot(5, 0),
+                            FlSpot(6, 0),
+                          ]
+                        : controller.weeklyAttendanceData.asMap().entries.map((entry) {
+                            return FlSpot(entry.key.toDouble(), entry.value);
+                          }).toList(),
                     isCurved: true,
                     color: AppConstant.primaryColor,
                     barWidth: 3,
@@ -645,30 +926,36 @@ class AttendanceSummaryTab extends StatelessWidget {
             ),
           ),
           SizedBox(height: 20),
-          _buildActivityItem(
-            'John Doe checked in',
-            '2 minutes ago',
-            Icons.login,
-            Colors.green,
-          ),
-          _buildActivityItem(
-            'Sarah Wilson requested leave',
-            '15 minutes ago',
-            Icons.event_busy,
-            Colors.orange,
-          ),
-          _buildActivityItem(
-            'Mike Johnson checked out',
-            '1 hour ago',
-            Icons.logout,
-            Colors.blue,
-          ),
-          _buildActivityItem(
-            'Late arrival: Alex Smith',
-            '2 hours ago',
-            Icons.access_time,
-            Colors.red,
-          ),
+          if (controller.recentActivity.isEmpty)
+            Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.history,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No recent activity',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ...controller.recentActivity.map((activity) => _buildActivityItem(
+              activity['title'] as String,
+              activity['time'] as String,
+              activity['icon'] as IconData,
+              activity['color'] as Color,
+            )).toList(),
         ],
       ),
     );

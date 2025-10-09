@@ -23,3 +23,4 @@ curl -s "${SUPABASE_URL}/rest/v1/attendance?select=*,schedule:employee_schedules
 
 echo ""
 
+

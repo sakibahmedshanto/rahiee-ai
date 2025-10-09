@@ -42,6 +42,13 @@ class AttendanceManagementService extends GetxService {
     String? notes,
     String? workType = 'regular',
     String? shiftType,
+    // Uniform verification parameters
+    String? checkInPhotoUrl,
+    String? checkInPhotoPath,
+    bool? wearingUniform,
+    double? uniformConfidence,
+    Map<String, dynamic>? uniformDetectionData,
+    int? verificationAttempts,
   }) async {
     try {
       isLoading.value = true;
@@ -68,12 +75,32 @@ class AttendanceManagementService extends GetxService {
       });
 
       if (response != null && response['success'] == true) {
+        // Update attendance with uniform verification data if provided
+        if (checkInPhotoUrl != null && response['attendance_id'] != null) {
+          try {
+            await _requireClient().from('attendance').update({
+              'check_in_photo_url': checkInPhotoUrl,
+              'check_in_photo_path': checkInPhotoPath,
+              'wearing_uniform': wearingUniform,
+              'uniform_confidence': uniformConfidence,
+              'uniform_detection_data': uniformDetectionData,
+              'verification_attempts': verificationAttempts,
+              'photo_verified_at': DateTime.now().toIso8601String(),
+            }).eq('id', response['attendance_id']);
+            
+            print('✅ Uniform verification data saved to attendance');
+          } catch (e) {
+            print('⚠️ Failed to save uniform data: $e');
+            // Don't fail the check-in if uniform data save fails
+          }
+        }
+        
         // Refresh pending approvals if admin
         await loadPendingApprovals();
         
         return {
           'success': true,
-          'message': response['message'] ?? 'Clocked in successfully. Waiting for admin approval.',
+          'message': response['message'] ?? 'Checked in successfully. ${wearingUniform == true ? "Uniform verified!" : ""}',
           'attendance_id': response['attendance_id'],
           'check_in_time': response['check_in_time'],
           'status': response['status'],
@@ -83,6 +110,7 @@ class AttendanceManagementService extends GetxService {
           'schedule_location': response['schedule_location'],
           'scheduled_start': response['scheduled_start'],
           'scheduled_end': response['scheduled_end'],
+          'wearing_uniform': wearingUniform,
         };
       } else {
         return {
@@ -108,6 +136,7 @@ class AttendanceManagementService extends GetxService {
     required double longitude,
     String? address,
     String? photoUrl,
+    String? photoPath,
     String? notes,
   }) async {
     try {
@@ -127,6 +156,21 @@ class AttendanceManagementService extends GetxService {
       });
 
       if (response != null && response['success'] == true) {
+        // Update checkout photo if provided
+        if (photoUrl != null) {
+          try {
+            await _requireClient().from('attendance').update({
+              'check_out_photo_url': photoUrl,
+              'check_out_photo_path': photoPath,
+            }).eq('id', attendanceId);
+            
+            print('✅ Checkout photo data saved to attendance');
+          } catch (e) {
+            print('⚠️ Failed to save checkout photo data: $e');
+            // Don't fail the checkout if photo save fails
+          }
+        }
+        
         // Refresh pending approvals if admin
         await loadPendingApprovals();
         
@@ -1020,17 +1064,22 @@ class AttendanceManagementService extends GetxService {
 
       final targetDate = (date ?? DateTime.now()).toIso8601String().split('T')[0];
       
-      // Get schedules assigned to this employee
+      // Get schedules assigned to this employee via schedule_assignments
       final assignedSchedules = await _supabase
-          .from('employee_schedules')
+          .from('schedule_assignments')
           .select('''
-            id, title, start_date_time, end_date_time, location, description,
-            department, status
+            schedule_id,
+            employee_schedules!inner(
+              id, title, start_date_time, end_date_time, location, description,
+              department, status
+            )
           ''')
-          .eq('assigned_user_id', currentUserId)
-          .gte('start_date_time', '${targetDate}T00:00:00')
-          .lt('start_date_time', '${targetDate}T23:59:59')
-          .order('start_date_time');
+          .eq('user_id', currentUserId)
+          .eq('is_active', true)
+          .eq('status', 'active')
+          .gte('employee_schedules.start_date_time', '${targetDate}T00:00:00')
+          .lt('employee_schedules.start_date_time', '${targetDate}T23:59:59')
+          .order('employee_schedules.start_date_time', ascending: true);
 
       // Get schedules available through approved swaps
       final swappedSchedules = await _supabase
@@ -1051,12 +1100,15 @@ class AttendanceManagementService extends GetxService {
       final allSchedules = <Map<String, dynamic>>[];
       
       // Add assigned schedules
-      for (var schedule in assignedSchedules) {
-        allSchedules.add({
-          ...schedule,
-          'schedule_type': 'assigned',
-          'can_check_in': true,
-        });
+      for (var assignment in assignedSchedules) {
+        final schedule = assignment['employee_schedules'];
+        if (schedule != null) {
+          allSchedules.add({
+            ...schedule,
+            'schedule_type': 'assigned',
+            'can_check_in': true,
+          });
+        }
       }
 
       // Add swapped schedules

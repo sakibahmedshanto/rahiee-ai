@@ -1307,12 +1307,11 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
       }
     }
 
-    // Create schedule
+    // Create schedule (without assignment)
     final scheduleResult = await widget.scheduleController.createSchedule(
       title: _titleController.text.trim(),
       startDateTime: _startDateTime!,
       endDateTime: _endDateTime!,
-      assignedUserId: _isMultiUserMode ? _selectedUserIds.first : _selectedUserId!,
       department: _selectedDepartment!,
       location: _locationController.text.trim(),
       description: _descriptionController.text.trim().isNotEmpty
@@ -1325,52 +1324,55 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
           ? _notesController.text.trim()
           : null,
       tags: _tags.isNotEmpty ? _tags : null,
+      isMultiUser: _isMultiUserMode,
+      maxParticipants: _maxParticipants,
+      minParticipants: _minParticipants,
     );
 
-    // If multi-user mode and schedule created successfully, assign additional users
-    if (_isMultiUserMode && scheduleResult['success'] == true) {
+    // If schedule created successfully, assign users
+    if (scheduleResult['success'] == true) {
       final scheduleId = scheduleResult['schedule_id']?.toString();
       
       if (scheduleId != null && scheduleId.isNotEmpty) {
-        // Assign all selected users
+        // Get user IDs to assign
+        final userIdsToAssign = _isMultiUserMode ? _selectedUserIds : [_selectedUserId!];
+        
+        // Assign users to the schedule
         final assignResult = await widget.scheduleController.assignMultipleUsersToSchedule(
           scheduleId: scheduleId,
-          userIds: _selectedUserIds,
-          notes: 'Multi-user schedule created with ${_selectedUserIds.length} employees',
+          userIds: userIdsToAssign,
+          notes: _isMultiUserMode 
+            ? 'Multi-user schedule created with ${userIdsToAssign.length} employees'
+            : 'Schedule created and assigned to employee',
         );
         
         if (assignResult) {
           Get.snackbar(
             'Success',
-            'Multi-user schedule created and ${_selectedUserIds.length} employee(s) assigned',
+            _isMultiUserMode
+              ? 'Schedule created and ${userIdsToAssign.length} employee(s) assigned'
+              : 'Schedule created and employee assigned successfully',
             backgroundColor: Colors.green.withOpacity(0.8),
             colorText: Colors.white,
             duration: Duration(seconds: 3),
           );
+        } else {
+          Get.snackbar(
+            'Partial Success',
+            'Schedule created, but failed to assign users. Please assign them manually.',
+            backgroundColor: Colors.orange.withOpacity(0.8),
+            colorText: Colors.white,
+            duration: Duration(seconds: 4),
+          );
         }
       } else {
-        // Schedule ID not found in response, try to get it from the list
-        await Future.delayed(Duration(milliseconds: 500));
-        if (widget.scheduleController.schedules.isNotEmpty) {
-          final newSchedule = widget.scheduleController.schedules.last;
-          final fallbackScheduleId = newSchedule['id']?.toString();
-          
-          if (fallbackScheduleId != null && fallbackScheduleId.isNotEmpty) {
-            await widget.scheduleController.assignMultipleUsersToSchedule(
-              scheduleId: fallbackScheduleId,
-              userIds: _selectedUserIds,
-              notes: 'Multi-user schedule created with ${_selectedUserIds.length} employees',
-            );
-          } else {
-            Get.snackbar(
-              'Partial Success',
-              'Schedule created, but could not assign additional users. Please assign them manually from the schedule list.',
-              backgroundColor: Colors.orange.withOpacity(0.8),
-              colorText: Colors.white,
-              duration: Duration(seconds: 4),
-            );
-          }
-        }
+        Get.snackbar(
+          'Partial Success',
+          'Schedule created, but could not retrieve schedule ID for assignment. Please assign users manually from the schedule list.',
+          backgroundColor: Colors.orange.withOpacity(0.8),
+          colorText: Colors.white,
+          duration: Duration(seconds: 4),
+        );
       }
     }
 

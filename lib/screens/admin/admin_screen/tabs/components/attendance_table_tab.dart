@@ -316,7 +316,8 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
           'not_granted',
           'completed',
           'approved',
-          'rejected'
+          'rejected',
+          'absent'
         ].map((status) => DropdownMenuItem(
           value: status,
           child: Container(
@@ -350,7 +351,8 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
           'not_granted',
           'completed',
           'approved',
-          'rejected'
+          'rejected',
+          'absent'
         ].map((status) => Container(
           alignment: Alignment.centerLeft,
           child: Row(
@@ -398,6 +400,8 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
         return Colors.red.shade50;
       case 'completed':
         return Colors.blue.shade50;
+      case 'absent':
+        return Colors.red.shade100; // Deep red for absent
       default:
         return Colors.grey.shade50;
     }
@@ -416,6 +420,8 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
         return Colors.red;
       case 'completed':
         return Colors.blue;
+      case 'absent':
+        return Colors.red.shade700; // Deep red for absent
       default:
         return Colors.grey;
     }
@@ -693,6 +699,8 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
         return Colors.red.shade50;
       case 'completed':
         return Colors.blue.shade50;
+      case 'absent':
+        return Colors.red.shade100; // Deep red for absent
       default:
         return index % 2 == 0 ? Colors.grey.shade50 : Colors.white;
     }

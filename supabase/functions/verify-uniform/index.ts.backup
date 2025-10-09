@@ -1,0 +1,399 @@
+// Supabase Edge Function: Uniform Verification
+// Uses Google Cloud Vision API to detect uniforms in check-in photos
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// Google Cloud Vision API
+const VISION_API_ENDPOINT = "https://vision.googleapis.com/v1/images:annotate";
+
+interface UniformVerificationRequest {
+  image_base64: string;
+  user_id: string;
+  schedule_id?: string;
+}
+
+serve(async (req) => {
+  // CORS headers
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    console.log("📸 Uniform verification request received");
+    
+    // Get request body
+    const { image_base64, user_id, schedule_id }: UniformVerificationRequest = await req.json();
+
+    // Validate inputs
+    if (!image_base64 || !user_id) {
+      console.error("❌ Missing required fields");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Missing required fields: image_base64, user_id",
+          wearing_uniform: false,
+          confidence: 0,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`👤 User ID: ${user_id}`);
+    console.log(`📏 Image size: ${image_base64.length} characters`);
+
+    // Get Google Cloud credentials from environment
+    const googleCredsStr = Deno.env.get("GOOGLE_CLOUD_CREDENTIALS");
+    if (!googleCredsStr) {
+      console.error("❌ GOOGLE_CLOUD_CREDENTIALS not configured");
+      throw new Error("GOOGLE_CLOUD_CREDENTIALS environment variable not set");
+    }
+
+    const credentials = JSON.parse(googleCredsStr);
+    console.log(`✅ Loaded credentials for project: ${credentials.project_id}`);
+
+    // Generate access token
+    console.log("🔑 Generating Google Cloud access token...");
+    const accessToken = await getGoogleAccessToken(credentials);
+    console.log("✅ Access token generated");
+
+    // Prepare Vision API request
+    const visionRequest = {
+      requests: [{
+        image: {
+          content: image_base64.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''), // Remove data URL prefix if present
+        },
+        features: [
+          {
+            type: "LABEL_DETECTION",
+            maxResults: 20,
+          },
+          {
+            type: "IMAGE_PROPERTIES",
+            maxResults: 5,
+          },
+        ],
+      }],
+    };
+
+    // Call Google Cloud Vision API
+    console.log("📡 Calling Google Cloud Vision API...");
+    const visionResponse = await fetch(
+      `${VISION_API_ENDPOINT}?key=${accessToken}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(visionRequest),
+      }
+    );
+
+    if (!visionResponse.ok) {
+      const errorText = await visionResponse.text();
+      console.error("❌ Vision API Error:", errorText);
+      throw new Error(`Vision API failed (${visionResponse.status}): ${errorText}`);
+    }
+
+    const visionData = await visionResponse.json();
+    console.log("✅ Vision API responded successfully");
+
+    // Check for errors in response
+    if (visionData.responses && visionData.responses[0]?.error) {
+      const error = visionData.responses[0].error;
+      console.error("❌ Vision API returned error:", error);
+      throw new Error(`Vision API error: ${error.message}`);
+    }
+
+    const annotations = visionData.responses[0];
+
+    // Analyze the results for uniform detection
+    console.log("🔍 Analyzing uniform detection...");
+    const result = analyzeUniformDetection(annotations);
+    console.log(`📊 Result: wearing_uniform=${result.wearing_uniform}, confidence=${result.confidence}%`);
+
+    // Return result
+    return new Response(
+      JSON.stringify({
+        success: true,
+        ...result,
+        detection_data: {
+          labels: annotations.labelAnnotations || [],
+          image_properties: annotations.imagePropertiesAnnotation || null,
+        },
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("❌ Error in verify-uniform function:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: error.message || "Internal server error",
+        wearing_uniform: false,
+        confidence: 0,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});
+
+/**
+ * Generate Google Cloud access token using service account
+ */
+async function getGoogleAccessToken(credentials: any): Promise<string> {
+  try {
+    // Create JWT header
+    const jwtHeader = {
+      alg: "RS256",
+      typ: "JWT",
+    };
+
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Create JWT claim set
+    const jwtClaimSet = {
+      iss: credentials.client_email,
+      scope: "https://www.googleapis.com/auth/cloud-vision",
+      aud: credentials.token_uri,
+      exp: now + 3600,
+      iat: now,
+    };
+
+    // Encode header and claim set
+    const encodedHeader = base64UrlEncode(JSON.stringify(jwtHeader));
+    const encodedClaimSet = base64UrlEncode(JSON.stringify(jwtClaimSet));
+    const signatureInput = `${encodedHeader}.${encodedClaimSet}`;
+
+    // Import private key
+    const privateKeyPem = credentials.private_key;
+    const privateKey = await importPrivateKey(privateKeyPem);
+
+    // Sign the JWT
+    const encoder = new TextEncoder();
+    const data = encoder.encode(signatureInput);
+    const signature = await crypto.subtle.sign(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: { name: "SHA-256" },
+      },
+      privateKey,
+      data
+    );
+
+    // Encode signature
+    const encodedSignature = base64UrlEncode(signature);
+    const jwt = `${signatureInput}.${encodedSignature}`;
+
+    // Exchange JWT for access token
+    const tokenResponse = await fetch(credentials.token_uri, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      throw new Error(`Failed to get access token: ${errorText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    return tokenData.access_token;
+  } catch (error) {
+    console.error("Error generating access token:", error);
+    throw error;
+  }
+}
+
+/**
+ * Import private key from PEM format
+ */
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemContents = pem
+    .substring(pemHeader.length, pem.length - pemFooter.length)
+    .replace(/\s/g, "");
+
+  const binaryDer = base64Decode(pemContents);
+
+  return await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"]
+  );
+}
+
+/**
+ * Base64 URL encode
+ */
+function base64UrlEncode(data: string | ArrayBuffer): string {
+  let base64: string;
+  
+  if (typeof data === "string") {
+    base64 = btoa(data);
+  } else {
+    base64 = btoa(String.fromCharCode(...new Uint8Array(data)));
+  }
+  
+  return base64
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
+
+/**
+ * Base64 decode to Uint8Array
+ */
+function base64Decode(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Analyze Google Vision API response for uniform detection
+ */
+function analyzeUniformDetection(annotations: any): {
+  wearing_uniform: boolean;
+  confidence: number;
+  message: string;
+  suggestions?: string[];
+} {
+  const labels = annotations.labelAnnotations || [];
+  
+  console.log(`🏷️  Detected ${labels.length} labels`);
+
+  // Keywords that suggest uniform/professional attire
+  const uniformKeywords = [
+    "uniform",
+    "clothing",
+    "shirt",
+    "formal wear",
+    "professional",
+    "suit",
+    "dress shirt",
+    "tie",
+    "collar",
+    "dress",
+    "blazer",
+    "workwear",
+    "business",
+    "attire",
+  ];
+  
+  // Keywords that suggest NO uniform
+  const casualKeywords = [
+    "casual",
+    "t-shirt",
+    "tank top",
+    "shorts",
+    "pajamas",
+    "sleepwear",
+    "underwear",
+  ];
+  
+  let uniformScore = 0;
+  let casualScore = 0;
+  const matchedLabels: string[] = [];
+  
+  // Check if person is detected
+  const personDetected = labels.some((l: any) => 
+    ["person", "face", "people", "human", "man", "woman"].some(keyword =>
+      l.description.toLowerCase().includes(keyword)
+    )
+  );
+  
+  if (!personDetected) {
+    console.log("⚠️  No person detected");
+    return {
+      wearing_uniform: false,
+      confidence: 0,
+      message: "No person detected in image. Please retake the photo showing yourself clearly.",
+      suggestions: ["Ensure good lighting", "Face the camera", "Show full upper body"],
+    };
+  }
+
+  console.log("✅ Person detected");
+  
+  // Analyze labels
+  for (const label of labels) {
+    const description = label.description.toLowerCase();
+    const score = label.score * 100;
+    
+    console.log(`  - ${label.description}: ${score.toFixed(1)}%`);
+    
+    // Check for uniform indicators
+    for (const keyword of uniformKeywords) {
+      if (description.includes(keyword)) {
+        uniformScore += score;
+        matchedLabels.push(`${label.description} (${score.toFixed(1)}%)`);
+        break;
+      }
+    }
+    
+    // Check for casual indicators
+    for (const keyword of casualKeywords) {
+      if (description.includes(keyword)) {
+        casualScore += score;
+        break;
+      }
+    }
+  }
+  
+  console.log(`📊 Uniform score: ${uniformScore.toFixed(1)}, Casual score: ${casualScore.toFixed(1)}`);
+  
+  // Calculate final confidence
+  const netScore = uniformScore - casualScore;
+  const confidence = Math.min(Math.max((netScore / 3), 0), 100); // Scale down
+  
+  // Decision logic - lowered threshold to 50% for better detection
+  const wearing_uniform = confidence > 50;
+  
+  let message = "";
+  const suggestions: string[] = [];
+  
+  if (wearing_uniform) {
+    message = matchedLabels.length > 0
+      ? `✅ Uniform verified! Detected: ${matchedLabels.slice(0, 3).join(", ")}`
+      : `✅ Uniform verified!`;
+  } else if (confidence > 30) {
+    message = "⚠️ Uniform detection unclear. Please retake photo or continue anyway.";
+    suggestions.push("Ensure proper uniform is worn");
+    suggestions.push("Better lighting may help");
+    suggestions.push("Show uniform clearly in frame");
+  } else {
+    message = "❌ No uniform detected.";
+    suggestions.push("Please wear proper uniform");
+    suggestions.push("Or continue without uniform if necessary");
+  }
+  
+  return {
+    wearing_uniform,
+    confidence: Math.round(confidence),
+    message,
+    suggestions: suggestions.length > 0 ? suggestions : undefined,
+  };
+}
