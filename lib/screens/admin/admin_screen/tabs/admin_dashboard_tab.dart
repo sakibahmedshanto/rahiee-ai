@@ -64,30 +64,30 @@ class AdminDashboardTab extends StatelessWidget {
               SizedBox(height: 24),
               
               // Analytics chart
-              Text(
-                'Today\'s Overview',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppConstant.textPrimary,
-                ),
-              ),
-              SizedBox(height: 12),
-              DashboardChartWidget(),
+              // Text(
+              //   'Today\'s Overview',
+              //   style: TextStyle(
+              //     fontSize: 18,
+              //     fontWeight: FontWeight.bold,
+              //     color: AppConstant.textPrimary,
+              //   ),
+              // ),
+              // SizedBox(height: 12),
+              // DashboardChartWidget(),
               
-              SizedBox(height: 24),
+              // SizedBox(height: 24),
               
-              // Recent activity
-              Text(
-                'Recent Activity',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppConstant.textPrimary,
-                ),
-              ),
-              SizedBox(height: 12),
-              RecentActivityWidget(),
+              // // Recent activity
+              // Text(
+              //   'Recent Activity',
+              //   style: TextStyle(
+              //     fontSize: 18,
+              //     fontWeight: FontWeight.bold,
+              //     color: AppConstant.textPrimary,
+              //   ),
+              // ),
+              // SizedBox(height: 12),
+              // RecentActivityWidget(),
               
               SizedBox(height: 80), // Bottom padding for navigation
             ],

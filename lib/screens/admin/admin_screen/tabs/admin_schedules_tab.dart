@@ -36,14 +36,14 @@ class _AdminSchedulesTabState extends State<AdminSchedulesTab> {
           children: [
             // Custom Tab Bar
             Container(
-              margin: EdgeInsets.all(16),
+              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               padding: EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(25),
               ),
               child: TabBar(
-                physics: NeverScrollableScrollPhysics(), // Disable tab scrolling
+                isScrollable: true, // Enable scrolling for smaller screens
                 indicator: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   color: AppConstant.primaryColor,
@@ -62,48 +62,58 @@ class _AdminSchedulesTabState extends State<AdminSchedulesTab> {
                 unselectedLabelColor: Colors.grey[600],
                 labelStyle: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: 13,
                 ),
                 unselectedLabelStyle: TextStyle(
                   fontWeight: FontWeight.w500,
-                  fontSize: 15,
+                  fontSize: 13,
                 ),
                 indicatorPadding: EdgeInsets.all(2),
+                tabAlignment: TabAlignment.start, // Align tabs to start
                 tabs: [
                   Tab(
                     height: 45,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add_circle_outline, size: 20),
-                        SizedBox(width: 6),
-                        Text('Create'),
-                      ],
+                    child: Container(
+                      constraints: BoxConstraints(minWidth: 70),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_circle_outline, size: 16),
+                          SizedBox(width: 3),
+                          Text('Create'),
+                        ],
+                      ),
                     ),
                   ),
                   Tab(
                     height: 45,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.table_chart_outlined, size: 20),
-                        SizedBox(width: 6),
-                        Text('Table'),
-                      ],
+                    child: Container(
+                      constraints: BoxConstraints(minWidth: 70),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.table_chart_outlined, size: 16),
+                          SizedBox(width: 3),
+                          Text('Table'),
+                        ],
+                      ),
                     ),
                   ),
                   Tab(
                     height: 45,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.swap_horiz, size: 20),
-                        SizedBox(width: 6),
-                        Text('Exchanges'),
-                      ],
+                    child: Container(
+                      constraints: BoxConstraints(minWidth: 70),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.swap_horiz, size: 16),
+                          SizedBox(width: 3),
+                          Text('Exchange Requests'),
+                        ],
+                      ),
                     ),
                   ),
                 ],

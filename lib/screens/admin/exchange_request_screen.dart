@@ -16,23 +16,24 @@ class AdminExchangeRequestScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppConstant.backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Exchange Requests',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppConstant.primaryColor,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => controller.loadExchangeRequests(isAdmin: true),
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+
+      //   title: const Text(
+      //     'Exchange Requests',
+      //     style: TextStyle(
+      //       fontWeight: FontWeight.bold,
+      //       color: Colors.white,
+      //     ),
+      //   ),
+      //   backgroundColor: AppConstant.primaryColor,
+      //   elevation: 0,
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.refresh, color: Colors.white),
+      //       onPressed: () => controller.loadExchangeRequests(isAdmin: true),
+      //     ),
+      //   ],
+      // ),
       body: RefreshIndicator(
         onRefresh: () => controller.loadExchangeRequests(isAdmin: true),
         child: Obx(() {
