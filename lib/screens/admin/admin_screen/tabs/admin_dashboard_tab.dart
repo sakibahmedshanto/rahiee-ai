@@ -5,10 +5,8 @@ import 'package:get/get.dart';
 import '../../../../controllers/admin_controllers/admin_controller.dart';
 import '../../../../utils/app_constant.dart';
 import '../components/dashboard_stats_cards.dart';
-import '../components/dashboard_chart_widget.dart';
 import '../components/attendance_pie_chart_widget.dart';
 import '../components/quick_actions_widget.dart';
-import '../components/recent_activity_widget.dart';
 
 class AdminDashboardTab extends StatelessWidget {
   const AdminDashboardTab({super.key});
@@ -60,35 +58,7 @@ class AdminDashboardTab extends StatelessWidget {
               ),
               SizedBox(height: 12),
               QuickActionsWidget(),
-              
               SizedBox(height: 24),
-              
-              // Analytics chart
-              // Text(
-              //   'Today\'s Overview',
-              //   style: TextStyle(
-              //     fontSize: 18,
-              //     fontWeight: FontWeight.bold,
-              //     color: AppConstant.textPrimary,
-              //   ),
-              // ),
-              // SizedBox(height: 12),
-              // DashboardChartWidget(),
-              
-              // SizedBox(height: 24),
-              
-              // // Recent activity
-              // Text(
-              //   'Recent Activity',
-              //   style: TextStyle(
-              //     fontSize: 18,
-              //     fontWeight: FontWeight.bold,
-              //     color: AppConstant.textPrimary,
-              //   ),
-              // ),
-              // SizedBox(height: 12),
-              // RecentActivityWidget(),
-              
               SizedBox(height: 80), // Bottom padding for navigation
             ],
           ),
