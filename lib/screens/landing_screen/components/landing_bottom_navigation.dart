@@ -16,18 +16,30 @@ class LandingBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(25),
+          topRight: Radius.circular(25),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+            color: AppConstant.primaryColor.withValues(alpha: 0.1),
+            blurRadius: 15,
+            offset: const Offset(0, -3),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -1),
+            spreadRadius: 0,
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: Radius.circular(25),
+          topRight: Radius.circular(25),
         ),
         child: Obx(() => BottomNavigationBar(
           currentIndex: selectedIndex.value,
@@ -37,30 +49,27 @@ class LandingBottomNavigation extends StatelessWidget {
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: AppConstant.primaryColor,
-          unselectedItemColor: Colors.grey,
-          selectedFontSize: 12,
+          unselectedItemColor: Colors.grey.shade500,
+          selectedFontSize: 13,
           unselectedFontSize: 12,
           elevation: 0, // Remove shadow since we added custom shadow
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today),
+              icon: Icon(Icons.calendar_today_outlined),
+              activeIcon: Icon(Icons.calendar_today),
               label: 'Schedule',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.login),
+              icon: Icon(Icons.login_outlined),
+              activeIcon: Icon(Icons.login),
               label: 'Attendance',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline),
-              label: 'Chat',
-            ),
-            BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
               label: 'Profile',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.more_horiz),
-              label: 'More',
             ),
           ],
         )),

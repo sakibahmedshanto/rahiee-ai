@@ -47,11 +47,7 @@ class _LandingScreenState extends State<LandingScreen> {
             case 1:
               return const AttendanceHistoryScreen();
             case 2:
-              return _buildComingSoonScreen('Chat');
-            case 3:
               return const ProfileScreen();
-            case 4:
-              return _buildComingSoonScreen('More');
             default:
               return const UnifiedScheduleScreen();
           }
@@ -63,35 +59,4 @@ class _LandingScreenState extends State<LandingScreen> {
     );
   }
 
-  Widget _buildComingSoonScreen(String screenName) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.construction,
-            size: 64,
-            color: AppConstant.primaryColor.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '$screenName',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppConstant.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Coming Soon!',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppConstant.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

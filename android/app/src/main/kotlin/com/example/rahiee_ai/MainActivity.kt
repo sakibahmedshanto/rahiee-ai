@@ -1,4 +1,4 @@
-package com.example.rahiee_ai
+package com.tanainent.rahiee_ai
 
 import io.flutter.embedding.android.FlutterActivity
 
