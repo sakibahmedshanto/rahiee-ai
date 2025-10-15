@@ -7,20 +7,12 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:YOUR_SENDER_ID:android:YOUR_ANDROID_APP_ID_1c70bb5",
+        "mobilesdk_app_id": "1:YOUR_SENDER_ID:android:YOUR_ANDROID_APP_ID_2c70bb5",
         "android_client_info": {
-          "package_name": "com.tanainent.rahiee_ai"
+          "package_name": "com.tanainent.rahieeai"
         }
       },
       "oauth_client": [
-        {
-          "client_id": "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.tanainent.rahiee_ai",
-            "certificate_hash": "ed9903697d8f416518cb79f9c69fdaa7a0abb2f2"
-          }
-        },
         {
           "client_id": "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
           "client_type": 3
@@ -42,7 +34,7 @@
               "client_id": "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.rahieeAi"
+                "bundle_id": "com.tanainent.rahieeai"
               }
             }
           ]
