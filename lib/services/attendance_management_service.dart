@@ -3,11 +3,13 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
+import 'notification_integration_service.dart';
 
 class AttendanceManagementService extends GetxService {
   static AttendanceManagementService get to => Get.find();
   
   final SupabaseService _supabaseService = SupabaseService.to;
+  final NotificationIntegrationService _notificationService = Get.find<NotificationIntegrationService>();
   
   SupabaseClient get _supabase => _supabaseService.client!;
 
@@ -98,6 +100,19 @@ class AttendanceManagementService extends GetxService {
         // Refresh pending approvals if admin
         await loadPendingApprovals();
         
+        // Send notification to admins if attendance requires approval
+        try {
+          await _sendAttendanceApprovalNotification(
+            response: response,
+            attendanceType: 'check_in',
+            address: address,
+            notes: notes,
+          );
+        } catch (e) {
+          print('Error sending attendance approval notification: $e');
+          // Don't fail the check-in if notification fails
+        }
+        
         return {
           'success': true,
           'message': response['message'] ?? 'Checked in successfully. ${wearingUniform == true ? "Uniform verified!" : ""}',
@@ -173,6 +188,19 @@ class AttendanceManagementService extends GetxService {
         
         // Refresh pending approvals if admin
         await loadPendingApprovals();
+        
+        // Send notification to admins if attendance requires approval
+        try {
+          await _sendAttendanceApprovalNotification(
+            response: response,
+            attendanceType: 'check_out',
+            address: address,
+            notes: notes,
+          );
+        } catch (e) {
+          print('Error sending attendance approval notification: $e');
+          // Don't fail the check-out if notification fails
+        }
         
         return {
           'success': true,

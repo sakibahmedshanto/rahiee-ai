@@ -347,6 +347,18 @@ class CameraCheckInController extends GetxController {
       isVerifying.value = false;
 
       if (result['success'] == true) {
+        // Send uniform violation notification to admins
+        try {
+          await _sendUniformViolationNotification(
+            result: result,
+            location: location,
+            verificationData: verificationData,
+          );
+        } catch (e) {
+          print('Error sending uniform violation notification: $e');
+          // Don't fail the check-in if notification fails
+        }
+
         Get.back(); // Close camera screen
         Get.snackbar(
           '⚠️ ${isCheckout ? "Checked Out" : "Checked In"}',
@@ -453,6 +465,54 @@ class CameraCheckInController extends GetxController {
     } catch (e) {
       print('Error sending admin notification: $e');
       // Don't fail the check-in/out if notification fails
+    }
+  }
+
+  /// Send uniform violation notification to admins
+  Future<void> _sendUniformViolationNotification({
+    required Map<String, dynamic> result,
+    required dynamic location,
+    required Map<String, dynamic> verificationData,
+  }) async {
+    try {
+      // Get admin and HR user IDs
+      final adminIds = await _notificationService.getAdminAndHRUserIds();
+      
+      if (adminIds.isEmpty) {
+        print('No admins found to notify about uniform violation');
+        return;
+      }
+
+      // Get user info
+      final user = _supabaseService.currentUser;
+      if (user == null) return;
+
+      // Get user's name from database
+      final userData = await _supabaseService.client
+          ?.from('my_users')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+      
+      final userName = userData?['full_name'] ?? user.email ?? 'Employee';
+      final locationName = location?.address ?? 'Work Location';
+      final confidence = verificationData['confidence']?.toDouble() ?? 0.0;
+      final checkInTime = DateTime.now();
+
+      await _notificationService.notifyAdminsUniformViolation(
+        adminIds: adminIds,
+        employeeId: user.id,
+        employeeName: userName,
+        location: locationName,
+        checkInTime: checkInTime,
+        confidence: confidence,
+        violationDetails: verificationData['message'] ?? 'No uniform detected',
+      );
+
+      print('Uniform violation notification sent to ${adminIds.length} admins');
+    } catch (e) {
+      print('Error sending uniform violation notification: $e');
+      // Don't fail the check-in if notification fails
     }
   }
 

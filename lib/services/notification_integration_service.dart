@@ -254,5 +254,192 @@ class NotificationIntegrationService extends GetxService {
       return [];
     }
   }
+
+  /// Send notification to admins about schedule exchange request
+  Future<void> notifyAdminsScheduleExchangeRequest({
+    required List<String> adminIds,
+    required String requesterId,
+    required String requesterName,
+    required String requestedUserId,
+    required String requestedUserName,
+    required String scheduleTitle,
+    required DateTime scheduleStartTime,
+    required DateTime scheduleEndTime,
+    required String reason,
+    String? notes,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: adminIds,
+        title: '🔄 Schedule Exchange Request',
+        body: '$requesterName wants to exchange schedule "$scheduleTitle" with $requestedUserName.\n\nReason: $reason',
+        data: {
+          'requesterId': requesterId,
+          'requesterName': requesterName,
+          'requestedUserId': requestedUserId,
+          'requestedUserName': requestedUserName,
+          'scheduleTitle': scheduleTitle,
+          'scheduleStartTime': scheduleStartTime.toIso8601String(),
+          'scheduleEndTime': scheduleEndTime.toIso8601String(),
+          'reason': reason,
+          'notes': notes,
+          'action': 'schedule_exchange_request',
+          'type': 'schedule_exchange',
+          'actionType': 'view_exchange_requests',
+        },
+        priority: 'high',
+      );
+
+      print('Schedule exchange request notification sent to ${adminIds.length} admins');
+    } catch (e) {
+      print('Error sending schedule exchange request notification: $e');
+    }
+  }
+
+  /// Send notification to admins about schedule exchange approval
+  Future<void> notifyAdminsScheduleExchangeApproval({
+    required List<String> adminIds,
+    required String requesterId,
+    required String requesterName,
+    required String requestedUserId,
+    required String requestedUserName,
+    required String scheduleTitle,
+    required String approvedBy,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: adminIds,
+        title: '✅ Schedule Exchange Approved',
+        body: 'Schedule exchange between $requesterName and $requestedUserName for "$scheduleTitle" has been approved by $approvedBy.',
+        data: {
+          'requesterId': requesterId,
+          'requesterName': requesterName,
+          'requestedUserId': requestedUserId,
+          'requestedUserName': requestedUserName,
+          'scheduleTitle': scheduleTitle,
+          'approvedBy': approvedBy,
+          'action': 'schedule_exchange_approved',
+          'type': 'schedule_exchange',
+          'actionType': 'view_exchange_requests',
+        },
+        priority: 'normal',
+      );
+
+      print('Schedule exchange approval notification sent to ${adminIds.length} admins');
+    } catch (e) {
+      print('Error sending schedule exchange approval notification: $e');
+    }
+  }
+
+  /// Send notification to admins about schedule exchange rejection
+  Future<void> notifyAdminsScheduleExchangeRejection({
+    required List<String> adminIds,
+    required String requesterId,
+    required String requesterName,
+    required String requestedUserId,
+    required String requestedUserName,
+    required String scheduleTitle,
+    required String rejectedBy,
+    String? rejectionReason,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: adminIds,
+        title: '❌ Schedule Exchange Rejected',
+        body: 'Schedule exchange between $requesterName and $requestedUserName for "$scheduleTitle" has been rejected by $rejectedBy.${rejectionReason != null ? '\n\nReason: $rejectionReason' : ''}',
+        data: {
+          'requesterId': requesterId,
+          'requesterName': requesterName,
+          'requestedUserId': requestedUserId,
+          'requestedUserName': requestedUserName,
+          'scheduleTitle': scheduleTitle,
+          'rejectedBy': rejectedBy,
+          'rejectionReason': rejectionReason,
+          'action': 'schedule_exchange_rejected',
+          'type': 'schedule_exchange',
+          'actionType': 'view_exchange_requests',
+        },
+        priority: 'normal',
+      );
+
+      print('Schedule exchange rejection notification sent to ${adminIds.length} admins');
+    } catch (e) {
+      print('Error sending schedule exchange rejection notification: $e');
+    }
+  }
+
+  /// Send notification to admins about attendance approval needed
+  Future<void> notifyAdminsAttendanceApprovalNeeded({
+    required List<String> adminIds,
+    required String employeeId,
+    required String employeeName,
+    required String attendanceType, // 'check_in' or 'check_out'
+    required DateTime attendanceTime,
+    required String location,
+    String? notes,
+    String? scheduleId,
+  }) async {
+    try {
+      final actionText = attendanceType == 'check_in' ? 'checked in' : 'checked out';
+      
+      await _notificationService.sendCustomNotifications(
+        userIds: adminIds,
+        title: '⏳ Attendance Approval Needed',
+        body: '$employeeName has $actionText at $location and requires approval.',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'attendanceType': attendanceType,
+          'attendanceTime': attendanceTime.toIso8601String(),
+          'location': location,
+          'notes': notes,
+          'scheduleId': scheduleId,
+          'action': 'attendance_approval_needed',
+          'type': 'attendance_approval',
+          'actionType': 'view_pending_approvals',
+        },
+        priority: 'high',
+      );
+
+      print('Attendance approval notification sent to ${adminIds.length} admins');
+    } catch (e) {
+      print('Error sending attendance approval notification: $e');
+    }
+  }
+
+  /// Send notification to admins about uniform violation
+  Future<void> notifyAdminsUniformViolation({
+    required List<String> adminIds,
+    required String employeeId,
+    required String employeeName,
+    required String location,
+    required DateTime checkInTime,
+    required double confidence,
+    String? violationDetails,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: adminIds,
+        title: '👔 Uniform Violation Detected',
+        body: '$employeeName checked in at $location without proper uniform (Confidence: ${(confidence * 100).toStringAsFixed(1)}%).',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'location': location,
+          'checkInTime': checkInTime.toIso8601String(),
+          'confidence': confidence,
+          'violationDetails': violationDetails,
+          'action': 'uniform_violation',
+          'type': 'uniform_violation',
+          'actionType': 'view_attendance',
+        },
+        priority: 'high',
+      );
+
+      print('Uniform violation notification sent to ${adminIds.length} admins');
+    } catch (e) {
+      print('Error sending uniform violation notification: $e');
+    }
+  }
 }
 
