@@ -7,6 +7,7 @@ import '../services/photo_storage_service.dart';
 import '../services/attendance_management_service.dart';
 import '../services/location_permission_service.dart';
 import '../services/supabase_service.dart';
+import '../services/notification_integration_service.dart';
 import '../utils/app_constant.dart';
 
 class CameraCheckInController extends GetxController {
@@ -27,6 +28,7 @@ class CameraCheckInController extends GetxController {
   final AttendanceManagementService _attendanceService = AttendanceManagementService.to;
   final LocationPermissionService _locationService = LocationPermissionService.to;
   final SupabaseService _supabaseService = SupabaseService.to;
+  final NotificationIntegrationService _notificationService = Get.find<NotificationIntegrationService>();
 
   final ImagePicker _picker = ImagePicker();
 
@@ -172,6 +174,9 @@ class CameraCheckInController extends GetxController {
       isVerifying.value = false;
 
       if (result['success'] == true) {
+        // Send notification to admins about check-in/checkout
+        _sendNotificationToAdmins(result, location);
+        
         Get.back(); // Close camera screen
         
         final hours = result['total_hours']?.toDouble();
@@ -386,6 +391,69 @@ class CameraCheckInController extends GetxController {
         ],
       ),
     );
+  }
+
+  /// Send notification to admins about check-in/checkout
+  void _sendNotificationToAdmins(Map<String, dynamic> result, dynamic location) async {
+    try {
+      // Get admin and HR user IDs
+      final adminIds = await _notificationService.getAdminAndHRUserIds();
+      
+      if (adminIds.isEmpty) {
+        print('No admins found to notify');
+        return;
+      }
+
+      // Get user info
+      final user = _supabaseService.currentUser;
+      if (user == null) return;
+
+      // Get user's name from database
+      final userData = await _supabaseService.client
+          ?.from('my_users')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+      
+      final userName = userData?['full_name'] ?? user.email ?? 'Employee';
+      final locationName = location?.address ?? 'Work Location';
+
+      if (isCheckout) {
+        // Check-out notification
+        final checkOutTime = DateTime.now();
+        Duration? workDuration;
+        
+        if (result['total_hours'] != null) {
+          final hours = result['total_hours'].toDouble();
+          workDuration = Duration(minutes: (hours * 60).round());
+        }
+
+        await _notificationService.notifyAdminsCheckOut(
+          adminIds: adminIds,
+          employeeId: user.id,
+          employeeName: userName,
+          location: locationName,
+          checkOutTime: checkOutTime,
+          scheduleId: scheduleId,
+          workDuration: workDuration,
+        );
+      } else {
+        // Check-in notification
+        final checkInTime = DateTime.now();
+        
+        await _notificationService.notifyAdminsCheckIn(
+          adminIds: adminIds,
+          employeeId: user.id,
+          employeeName: userName,
+          location: locationName,
+          checkInTime: checkInTime,
+          scheduleId: scheduleId,
+        );
+      }
+    } catch (e) {
+      print('Error sending admin notification: $e');
+      // Don't fail the check-in/out if notification fails
+    }
   }
 
   @override

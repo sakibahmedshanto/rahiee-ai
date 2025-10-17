@@ -16,6 +16,9 @@ interface NotificationRequest {
     department?: string;
   };
   priority?: 'high' | 'normal' | 'low';
+  actionType?: string;
+  expiresInDays?: number;
+  saveToDatabase?: boolean; // Default: true
 }
 
 interface UserNotificationData {
@@ -240,6 +243,59 @@ function personalizeContent(
   return personalized;
 }
 
+// Save notification to database
+async function saveNotificationToDatabase(
+  userId: string,
+  title: string,
+  body: string,
+  type: string,
+  imageUrl?: string,
+  priority?: string,
+  actionType?: string,
+  actionData?: Record<string, any>,
+  scheduleData?: any,
+  batchId?: string,
+  expiresInDays?: number
+): Promise<{ success: boolean; notificationId?: string; error?: string }> {
+  try {
+    const notificationData = {
+      user_id: userId,
+      title,
+      body,
+      image_url: imageUrl,
+      type,
+      priority: priority || 'normal',
+      action_type: actionType,
+      action_data: actionData ? actionData : null,
+      schedule_id: scheduleData?.scheduleId,
+      schedule_data: scheduleData ? scheduleData : null,
+      batch_id: batchId,
+      status: 'sent',
+      is_read: false,
+      sent_at: new Date().toISOString(),
+      expires_at: expiresInDays 
+        ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
+        : null,
+    };
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert(notificationData)
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Failed to save notification to database:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, notificationId: data.id };
+  } catch (error) {
+    console.error('Error saving notification:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Notification templates
 const TEMPLATES = {
   schedule_assignment: {
@@ -349,6 +405,10 @@ Deno.serve(async (req) => {
 
     console.log(`Processing notifications for ${validUsers.length} users`);
 
+    // Generate batch ID for this notification batch
+    const batchId = crypto.randomUUID();
+    const saveToDb = requestData.saveToDatabase !== false; // Default: true
+
     // Send notifications to all users
     const results = await Promise.all(
       validUsers.map(async (user) => {
@@ -371,7 +431,7 @@ Deno.serve(async (req) => {
           ...(requestData.scheduleData || {}),
         };
 
-        // Send notification
+        // Send notification via FCM
         const result = await sendFirebaseNotification(
           userData.deviceToken,
           personalizedTitle,
@@ -381,11 +441,35 @@ Deno.serve(async (req) => {
           requestData.priority || 'high'
         );
 
+        // Save to database
+        let notificationId: string | undefined;
+        if (saveToDb) {
+          const dbResult = await saveNotificationToDatabase(
+            user.id,
+            personalizedTitle,
+            personalizedBody,
+            requestData.type,
+            requestData.imageUrl,
+            requestData.priority,
+            requestData.actionType,
+            dataPayload,
+            requestData.scheduleData,
+            batchId,
+            requestData.expiresInDays
+          );
+          notificationId = dbResult.notificationId;
+          
+          if (!dbResult.success) {
+            console.warn(`Failed to save notification to DB for user ${user.id}:`, dbResult.error);
+          }
+        }
+
         return {
           userId: user.id,
           userName: user.full_name,
           success: result.success,
           error: result.error,
+          notificationId,
         };
       })
     );
@@ -405,6 +489,7 @@ Deno.serve(async (req) => {
         sentCount,
         failedCount,
         errors,
+        batchId,
         processedUsers: results,
       }),
       {
