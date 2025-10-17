@@ -7,12 +7,14 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../services/supabase_service.dart';
+import '../../services/fcm_service.dart';
 import 'get_user_data_controller.dart';
 
 class GoogleSignInController extends GetxController {
   final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['profile', 'email']);
   final SupabaseService _supabaseService = SupabaseService.to;
   final GetUserDataController _getUserDataController = Get.put(GetUserDataController());
+  final FCMService _fcmService = Get.find<FCMService>();
 
   Future<bool> signInWithGoogle() async {
     try {
@@ -60,6 +62,16 @@ class GoogleSignInController extends GetxController {
               );
 
               bool userCreated = await _getUserDataController.createUserModel(userModel);
+              
+              // Save device token for push notifications
+              if (userCreated) {
+                try {
+                  await _fcmService.saveDeviceTokenForUser(user.id);
+                } catch (e) {
+                  print('Failed to save device token: $e');
+                }
+              }
+              
               EasyLoading.dismiss();
               
               if (userCreated) {
@@ -78,6 +90,13 @@ class GoogleSignInController extends GetxController {
               UserModel updatedUser = existingUser.copyWith(
                 userImg: user.userMetadata?['avatar_url'] ?? existingUser.userImg,
               );
+              
+              // Save device token for push notifications
+              try {
+                await _fcmService.saveDeviceTokenForUser(user.id);
+              } catch (e) {
+                print('Failed to save device token: $e');
+              }
               
               // Only update if profile image actually changed
               if (updatedUser.userImg != existingUser.userImg) {

@@ -9,6 +9,7 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../controllers/auth_controller/get_user_data_controller.dart';
+import '../../../services/fcm_service.dart';
 import 'forget_password_screen.dart';
 import '../landing_screen/landing_screen.dart';
 
@@ -24,6 +25,7 @@ class _SignInScreenState extends State<SignInScreen>
   final SignInController signInController = Get.put(SignInController());
   final GetUserDataController getUserDataController =
       Get.put(GetUserDataController());
+  final FCMService fcmService = Get.find<FCMService>();
   
   // Use late initialization for better performance
   late final TextEditingController userEmail;
@@ -403,6 +405,14 @@ class _SignInScreenState extends State<SignInScreen>
               );
               return;
             }
+          }
+          
+          // Save device token for push notifications
+          try {
+            await fcmService.saveDeviceTokenForUser(authResponse.user!.id);
+          } catch (e) {
+            // Don't block sign-in if device token saving fails
+            print('Failed to save device token: $e');
           }
           
           // Navigate based on user role
