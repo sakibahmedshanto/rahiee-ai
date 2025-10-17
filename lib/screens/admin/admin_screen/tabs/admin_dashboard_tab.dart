@@ -7,6 +7,7 @@ import '../../../../utils/app_constant.dart';
 import '../components/dashboard_stats_cards.dart';
 import '../components/attendance_pie_chart_widget.dart';
 import '../components/quick_actions_widget.dart';
+import '../../../../widgets/notification_badge_widget.dart';
 
 class AdminDashboardTab extends StatelessWidget {
   const AdminDashboardTab({super.key});
@@ -44,6 +45,14 @@ class AdminDashboardTab extends StatelessWidget {
               
               // Attendance Status Pie Chart - Matching the image
               AttendancePieChartWidget(),
+              
+              SizedBox(height: 24),
+              
+              // Recent Notifications
+              RecentNotificationsWidget(
+                maxItems: 3,
+                onViewAll: () => Get.toNamed('/notifications'),
+              ),
               
               SizedBox(height: 24),
               

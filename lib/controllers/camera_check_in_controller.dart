@@ -28,7 +28,8 @@ class CameraCheckInController extends GetxController {
   final AttendanceManagementService _attendanceService = AttendanceManagementService.to;
   final LocationPermissionService _locationService = LocationPermissionService.to;
   final SupabaseService _supabaseService = SupabaseService.to;
-  final NotificationIntegrationService _notificationService = Get.find<NotificationIntegrationService>();
+  // Use lazy initialization to avoid dependency issues
+  NotificationIntegrationService get _notificationService => Get.find<NotificationIntegrationService>();
 
   final ImagePicker _picker = ImagePicker();
 

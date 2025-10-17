@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../controllers/admin_controllers/admin_controller.dart';
 import '../../../../../controllers/admin_controllers/admin_schedule_controller.dart';
+import '../../../../../services/notification_integration_service.dart';
 import '../../../../../utils/app_constant.dart';
 
 class ScheduleCreateTab extends StatefulWidget {
@@ -1457,6 +1458,22 @@ class _ScheduleCreateTabState extends State<ScheduleCreateTab> {
         );
         
         if (assignResult) {
+          // Send notifications to assigned users
+          try {
+            final notificationService = Get.find<NotificationIntegrationService>();
+            await notificationService.sendScheduleAssignmentNotifications(
+              userIds: userIdsToAssign,
+              scheduleTitle: _titleController.text.trim(),
+              scheduleId: scheduleId,
+              startTime: _startDateTime!,
+              endTime: _endDateTime!,
+              location: _locationController.text.trim(),
+              department: _selectedDepartment!,
+            );
+          } catch (e) {
+            debugPrint('Failed to send schedule assignment notifications: $e');
+          }
+          
           Get.snackbar(
             'Success',
             _isMultiUserMode

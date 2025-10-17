@@ -5,7 +5,8 @@ import 'notification_service.dart';
 class NotificationIntegrationService extends GetxService {
   static NotificationIntegrationService get to => Get.find();
   
-  final NotificationService _notificationService = Get.find<NotificationService>();
+  // Use lazy initialization to avoid dependency issues
+  NotificationService get _notificationService => Get.find<NotificationService>();
 
   /// Send notifications when a schedule is created and users are assigned
   Future<void> notifyScheduleAssignment({
@@ -33,6 +34,66 @@ class NotificationIntegrationService extends GetxService {
     } catch (e) {
       print('Error sending schedule assignment notifications: $e');
     }
+  }
+
+  /// Send personalized notifications when admin creates schedules for assigned users
+  Future<void> sendScheduleAssignmentNotifications({
+    required List<String> userIds,
+    required String scheduleTitle,
+    required String scheduleId,
+    required DateTime startTime,
+    required DateTime endTime,
+    required String location,
+    required String department,
+  }) async {
+    try {
+      final result = await _notificationService.sendScheduleAssignmentNotifications(
+        userIds: userIds,
+        scheduleId: scheduleId,
+        startTime: startTime.toIso8601String(),
+        endTime: endTime.toIso8601String(),
+        location: location,
+        department: department,
+        customTitle: '📅 New Schedule Assignment',
+        customBody: 'Hey {firstName}! You have been assigned to a new schedule: "$scheduleTitle" starting ${_formatDateTime(startTime)}.',
+      );
+
+      print('Schedule assignment notifications sent: ${result.sentCount} success, ${result.failedCount} failed');
+    } catch (e) {
+      print('Error sending schedule assignment notifications: $e');
+    }
+  }
+
+  /// Helper method to format DateTime for display
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(Duration(days: 1));
+    final scheduleDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    
+    if (scheduleDate == today) {
+      return 'today at ${_formatTime(dateTime)}';
+    } else if (scheduleDate == tomorrow) {
+      return 'tomorrow at ${_formatTime(dateTime)}';
+    } else {
+      return 'on ${_formatDate(dateTime)} at ${_formatTime(dateTime)}';
+    }
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    return '$displayHour:$minute $period';
+  }
+
+  String _formatDate(DateTime dateTime) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[dateTime.month - 1]} ${dateTime.day}';
   }
 
   /// Send notifications when a schedule is updated

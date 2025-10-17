@@ -9,7 +9,8 @@ class AttendanceManagementService extends GetxService {
   static AttendanceManagementService get to => Get.find();
   
   final SupabaseService _supabaseService = SupabaseService.to;
-  final NotificationIntegrationService _notificationService = Get.find<NotificationIntegrationService>();
+  // Use lazy initialization to avoid dependency issues
+  NotificationIntegrationService get _notificationService => Get.find<NotificationIntegrationService>();
   
   SupabaseClient get _supabase => _supabaseService.client!;
 
@@ -1172,6 +1173,66 @@ class AttendanceManagementService extends GetxService {
     } catch (e) {
       print('Error getting attendance with schedule details: $e');
       return null;
+    }
+  }
+
+  /// Send notification to admins about attendance requiring approval
+  Future<void> _sendAttendanceApprovalNotification({
+    required Map<String, dynamic> response,
+    required String attendanceType,
+    String? address,
+    String? notes,
+  }) async {
+    try {
+      // Only send notification if attendance status indicates it needs approval
+      final status = response['status'];
+      if (status != 'pending' && status != 'waiting_for_approval') {
+        print('Attendance does not require approval, skipping notification');
+        return;
+      }
+
+      // Get admin and HR user IDs
+      final adminIds = await _notificationService.getAdminAndHRUserIds();
+      
+      if (adminIds.isEmpty) {
+        print('No admins found to notify about attendance approval');
+        return;
+      }
+
+      // Get current user info
+      final currentUserId = _supabaseService.currentUser?.id;
+      if (currentUserId == null) {
+        print('Cannot send notification: user not authenticated');
+        return;
+      }
+
+      // Get user's name from database
+      final userData = await _requireClient()
+          .from('my_users')
+          .select('full_name')
+          .eq('id', currentUserId)
+          .single();
+      
+      final userName = userData['full_name'] ?? 'Employee';
+      final locationName = address ?? response['schedule_location'] ?? 'Work Location';
+      final attendanceTime = DateTime.now();
+      final scheduleId = response['schedule_id'];
+
+      await _notificationService.notifyAdminsAttendanceApprovalNeeded(
+        adminIds: adminIds,
+        employeeId: currentUserId,
+        employeeName: userName,
+        attendanceType: attendanceType,
+        attendanceTime: attendanceTime,
+        location: locationName,
+        notes: notes,
+        scheduleId: scheduleId,
+      );
+
+      print('Attendance approval notification sent to ${adminIds.length} admins');
+    } catch (e) {
+      print('Error sending attendance approval notification: $e');
+      // Don't fail the attendance operation if notification fails
     }
   }
 }

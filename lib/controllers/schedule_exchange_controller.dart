@@ -24,8 +24,8 @@ class ScheduleExchangeController extends GetxController {
   // Current user ID (get from Supabase auth)
   String? get _currentUserId => Supabase.instance.client.auth.currentUser?.id;
   
-  // Notification service
-  final NotificationIntegrationService _notificationService = Get.find<NotificationIntegrationService>();
+  // Notification service - use lazy initialization to avoid dependency issues
+  NotificationIntegrationService get _notificationService => Get.find<NotificationIntegrationService>();
 
   @override
   void onInit() {

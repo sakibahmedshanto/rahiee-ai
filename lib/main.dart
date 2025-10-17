@@ -17,6 +17,7 @@ import 'screens/auth_ui/splash_screen/splash_screen.dart';
 import 'screens/auth_ui/welcome_screen.dart';
 import 'screens/admin/admin_screen/admin_screen.dart';
 import 'screens/auth_ui/sign_in_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 import 'utils/app_constant.dart';
@@ -44,7 +45,10 @@ Future<void> main() async {
   Get.put(FCMService());
   Get.put(NotificationService());
   Get.put(NotificationHistoryService());
-  Get.put(NotificationIntegrationService());
+  
+  // Initialize NotificationIntegrationService with lazy initialization
+  Get.lazyPut(() => NotificationIntegrationService());
+  
   Get.put(ThemeController());
   Get.put(AdminController());
   runApp(const MyApp());
@@ -67,6 +71,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/welcome', page: () => const WelcomeScreen()),
         GetPage(name: '/admin', page: () => const AdminScreen()),
         GetPage(name: '/sign-in', page: () => const SignInScreen()),
+        GetPage(name: '/notifications', page: () => const NotificationsScreen()),
       ],
     );
   }

@@ -184,6 +184,8 @@ async function sendFirebaseNotification(
             click_action: 'FLUTTER_NOTIFICATION_CLICK',
             tag: 'rahiee_notification',
             visibility: 'public',
+            title: title,
+            body: body,
           },
         },
         apns: {

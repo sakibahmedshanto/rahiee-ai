@@ -11,6 +11,7 @@ import 'tabs/admin_employees_tab.dart';
 import 'tabs/admin_attendance_tab.dart';
 import 'tabs/admin_schedules_tab.dart';
 import 'tabs/admin_summary_tab.dart';
+import '../../../widgets/notification_badge_widget.dart';
 
 class AdminScreen extends StatefulWidget {
   final UserModel? userModel; // Make it optional
@@ -121,42 +122,12 @@ class _AdminScreenState extends State<AdminScreen> {
         );
       }),
       actions: [
-        // Notification indicator
-        Obx(() => Stack(
-          children: [
-            IconButton(
-              icon: Icon(Icons.notifications_outlined),
-              onPressed: () {
-                // Handle notifications
-              },
-            ),
-            if (adminController.totalPendingApprovals.value > 0)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: AppConstant.errorColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  constraints: BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Text(
-                    '${adminController.totalPendingApprovals.value}',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-          ],
-        )),
+        // Dynamic notification badge
+        NotificationBadgeWidget(
+          onTap: () => _navigateToNotifications(),
+          iconColor: AppConstant.textLight,
+          badgeColor: AppConstant.errorColor,
+        ),
         
         // Refresh button
         Obx(() => IconButton(
@@ -274,5 +245,9 @@ class _AdminScreenState extends State<AdminScreen> {
         ],
       ),
     );
+  }
+
+  void _navigateToNotifications() {
+    Get.toNamed('/notifications');
   }
 }

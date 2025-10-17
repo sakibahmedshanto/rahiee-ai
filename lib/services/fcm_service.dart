@@ -2,6 +2,8 @@
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller/get_user_data_controller.dart';
 import '../models/user_model.dart';
@@ -26,6 +28,9 @@ class FCMService extends GetxService {
   /// Initialize Firebase Cloud Messaging
   Future<void> initializeFCM() async {
     try {
+      // Create notification channel for Android
+      await _createNotificationChannel();
+      
       // Request permission for notifications
       NotificationSettings settings = await _firebaseMessaging.requestPermission(
         alert: true,
@@ -209,6 +214,30 @@ class FCMService extends GetxService {
   /// Get current notification settings
   Future<NotificationSettings> getNotificationSettings() async {
     return await _firebaseMessaging.getNotificationSettings();
+  }
+
+  /// Create notification channel for Android
+  Future<void> _createNotificationChannel() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        const platform = MethodChannel('rahiee_ai/notifications');
+        await platform.invokeMethod('createNotificationChannel', {
+          'channelId': 'rahiee_notifications',
+          'channelName': 'Rahiee Notifications',
+          'channelDescription': 'Notifications for schedule updates, attendance reminders, and other important updates',
+          'importance': 'high',
+          'enableVibration': true,
+          'enableSound': true,
+          'enableLights': true,
+          'lightColor': '#FF6B35',
+        });
+        debugPrint('Notification channel created successfully');
+      } catch (e) {
+        debugPrint('Error creating notification channel: $e');
+        // Fallback: Firebase will create a default channel
+        debugPrint('Firebase will use default notification channel');
+      }
+    }
   }
 }
 
