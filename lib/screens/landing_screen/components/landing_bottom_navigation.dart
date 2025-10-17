@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../utils/app_constant.dart';
+import '../../../services/notification_history_service.dart';
 
 class LandingBottomNavigation extends StatelessWidget {
   final RxInt selectedIndex;
@@ -55,7 +56,7 @@ class LandingBottomNavigation extends StatelessWidget {
           elevation: 0, // Remove shadow since we added custom shadow
           showSelectedLabels: true,
           showUnselectedLabels: true,
-          items: const [
+          items: [
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_today_outlined),
               activeIcon: Icon(Icons.calendar_today),
@@ -65,6 +66,77 @@ class LandingBottomNavigation extends StatelessWidget {
               icon: Icon(Icons.login_outlined),
               activeIcon: Icon(Icons.login),
               label: 'Attendance',
+            ),
+            BottomNavigationBarItem(
+              icon: Obx(() {
+                final notificationService = Get.find<NotificationHistoryService>();
+                final unreadCount = notificationService.unreadCount.value;
+                return Stack(
+                  children: [
+                    const Icon(Icons.notifications_outlined),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }),
+              activeIcon: Obx(() {
+                final notificationService = Get.find<NotificationHistoryService>();
+                final unreadCount = notificationService.unreadCount.value;
+                return Stack(
+                  children: [
+                    const Icon(Icons.notifications),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }),
+              label: 'Notifications',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),

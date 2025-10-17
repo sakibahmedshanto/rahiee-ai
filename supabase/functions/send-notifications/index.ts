@@ -48,9 +48,11 @@ function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
     .replace(/=/g, '');
 }
 
-// Generate JWT and get access token
+// Generate JWT and get access token using latest Web Crypto API
 async function getAccessToken(): Promise<string> {
   try {
+    console.log('Generating JWT for Firebase access token...');
+    
     const header = {
       alg: 'RS256',
       typ: 'JWT',
@@ -62,10 +64,12 @@ async function getAccessToken(): Promise<string> {
       scope: 'https://www.googleapis.com/auth/firebase.messaging',
       aud: 'https://oauth2.googleapis.com/token',
       iat: now,
-      exp: now + 3600,
+      exp: now + 3600, // Token expires in 1 hour
     };
 
-    // Encode header and payload
+    console.log('JWT Payload:', payload);
+
+    // Encode header and payload using base64url
     const encodedHeader = arrayBufferToBase64Url(
       new TextEncoder().encode(JSON.stringify(header))
     );
@@ -74,8 +78,9 @@ async function getAccessToken(): Promise<string> {
     );
 
     const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+    console.log('Unsigned JWT created');
 
-    // Import private key
+    // Process private key
     const pemHeader = '-----BEGIN PRIVATE KEY-----';
     const pemFooter = '-----END PRIVATE KEY-----';
     const pemContents = serviceAccount.private_key
@@ -90,6 +95,7 @@ async function getAccessToken(): Promise<string> {
       binaryDerArray[i] = binaryDer.charCodeAt(i);
     }
 
+    console.log('Importing private key...');
     const key = await crypto.subtle.importKey(
       'pkcs8',
       binaryDerArray,
@@ -101,6 +107,7 @@ async function getAccessToken(): Promise<string> {
       ['sign']
     );
 
+    console.log('Signing JWT...');
     // Sign the token
     const signature = await crypto.subtle.sign(
       'RSASSA-PKCS1-v1_5',
@@ -110,8 +117,10 @@ async function getAccessToken(): Promise<string> {
 
     const encodedSignature = arrayBufferToBase64Url(signature);
     const jwt = `${unsignedToken}.${encodedSignature}`;
+    console.log('JWT generated successfully');
 
     // Exchange JWT for access token
+    console.log('Exchanging JWT for access token...');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
@@ -124,11 +133,13 @@ async function getAccessToken(): Promise<string> {
     });
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.text();
-      throw new Error(`Failed to get access token: ${error}`);
+      const errorText = await tokenResponse.text();
+      console.error('Token exchange failed:', errorText);
+      throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`);
     }
 
     const tokenData = await tokenResponse.json();
+    console.log('Access token obtained successfully');
     return tokenData.access_token;
   } catch (error) {
     console.error('Error getting access token:', error);
@@ -146,7 +157,11 @@ async function sendFirebaseNotification(
   priority: string = 'high'
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Attempting to send notification to token: ${deviceToken.substring(0, 20)}...`);
+    console.log(`Title: ${title}, Body: ${body}`);
+    
     const accessToken = await getAccessToken();
+    console.log('Access token obtained successfully');
     
     const message = {
       message: {
@@ -166,9 +181,17 @@ async function sendFirebaseNotification(
             sound: 'default',
             icon: 'ic_notification',
             color: '#FF6B35',
+            click_action: 'FLUTTER_NOTIFICATION_CLICK',
+            tag: 'rahiee_notification',
+            visibility: 'public',
           },
         },
         apns: {
+          headers: {
+            'apns-priority': priority === 'high' ? '10' : '5',
+            'apns-expiration': String(Math.floor(Date.now() / 1000) + 86400), // 24 hours
+            'apns-collapse-id': 'rahiee_notification',
+          },
           payload: {
             aps: {
               alert: {
@@ -177,35 +200,67 @@ async function sendFirebaseNotification(
               },
               sound: 'default',
               badge: 1,
+              category: 'SCHEDULE_NOTIFICATION',
+              'mutable-content': 1,
+              'content-available': 1,
             },
           },
+        },
+        webpush: {
+          headers: {
+            'TTL': '86400',
+          },
+          notification: {
+            title: title,
+            body: body,
+            icon: '/icon-192x192.png',
+            badge: '/badge-72x72.png',
+            requireInteraction: true,
+            actions: [
+              {
+                action: 'view',
+                title: 'View',
+              },
+              {
+                action: 'dismiss',
+                title: 'Dismiss',
+              },
+            ],
+          },
+        },
+        fcm_options: {
+          analytics_label: 'rahiee_notification',
         },
       },
     };
 
+    console.log('Sending FCM request...');
     const res = await fetch(
       `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify(message),
       }
     );
 
     const resData = await res.json();
+    console.log('FCM Response Status:', res.status);
+    console.log('FCM Response Data:', resData);
     
-    if (res.status < 200 || res.status > 299) {
-      console.error('FCM Error:', resData);
+    if (!res.ok) {
+      console.error('FCM Error Response:', resData);
+      const errorMessage = resData.error?.message || resData.message || `HTTP ${res.status}`;
       return { 
         success: false, 
-        error: resData.error?.message || 'FCM error'
+        error: `FCM error: ${errorMessage}`
       };
     }
 
-    console.log('Notification sent successfully');
+    console.log('Notification sent successfully via FCM v1 API');
     return { success: true };
 
   } catch (error) {
