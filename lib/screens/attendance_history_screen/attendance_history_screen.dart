@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import '../../controllers/attendance_history_controller.dart';
 import '../../utils/app_constant.dart';
+import '../../utils/timezone_utils.dart';
 
 class AttendanceHistoryScreen extends StatelessWidget {
   const AttendanceHistoryScreen({super.key});
@@ -133,12 +133,8 @@ class AttendanceHistoryScreen extends StatelessWidget {
   static Widget _buildAttendanceCard(Map<String, dynamic> record) {
     final schedule = record['schedule'] as Map<String, dynamic>?;
     final status = record['status'] as String?;
-    final checkInTime = record['check_in_time'] != null 
-        ? DateTime.parse(record['check_in_time']) 
-        : null;
-    final checkOutTime = record['check_out_time'] != null 
-        ? DateTime.parse(record['check_out_time']) 
-        : null;
+    final checkInTime = TimezoneUtils.parseToLocal(record['check_in_time']);
+    final checkOutTime = TimezoneUtils.parseToLocal(record['check_out_time']);
     final workDurationHours = (record['work_duration_hours'] ?? 0.0) as num;
     final expectedHours = (record['expected_hours'] ?? 8.0) as num;
     final isLate = record['is_late'] as bool? ?? false;
@@ -182,9 +178,9 @@ class AttendanceHistoryScreen extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   checkInTime != null 
-                      ? DateFormat('MMM dd, yyyy').format(checkInTime)
+                      ? TimezoneUtils.formatDate(checkInTime)
                       : record['date'] != null
-                          ? DateFormat('MMM dd, yyyy').format(DateTime.parse(record['date']))
+                          ? TimezoneUtils.formatDate(TimezoneUtils.parseToLocal(record['date']))
                           : 'N/A',
                   style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                 ),
@@ -408,7 +404,7 @@ class AttendanceHistoryScreen extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          time != null ? DateFormat('HH:mm').format(time) : '--:--',
+          time != null ? TimezoneUtils.formatTime12Hour(time) : '--:--',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,

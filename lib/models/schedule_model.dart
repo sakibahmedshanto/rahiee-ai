@@ -1,5 +1,7 @@
 // ignore_for_file: file_names
 
+import '../utils/timezone_utils.dart';
+
 class ScheduleModel {
   final String scheduleId;
   final String title;
@@ -22,10 +24,33 @@ class ScheduleModel {
   final List<String>? tags; // For categorization
   final Map<String, dynamic>? customFields; // Future extensibility
   
-  // Assignment history tracking
-  final List<ScheduleAssignmentHistory>? assignmentHistory;
+  // Timezone-aware status fields
+  final String? scheduleStatus; // 'upcoming', 'ready_to_checkin', 'in_progress', 'completed', 'expired'
+  final String? workStatus; // 'upcoming', 'ready_to_checkin', 'in_progress', 'completed', 'expired'
+  final bool? canCheckIn;
+  final bool? canCheckOut;
+  final bool? hasCheckedIn;
+  final bool? hasCheckedOut;
+  final bool? isExpired;
+  final bool? isCompleted;
+  final bool? isLate;
+  final DateTime? checkInTime;
+  final DateTime? checkOutTime;
+  final double? actualDurationHours;
+  final double? timeUntilStartSeconds;
+  final double? timeSinceEndSeconds;
+  final String? attendanceId;
+  final String? attendanceStatus;
+  final bool? wearingUniform;
+  final double? uniformConfidence;
   
-  // No attendance fields - schedules are independent
+  // Assignment information
+  final DateTime? assignedAt;
+  final String? assignmentNotes;
+  final String? assignmentStatus;
+  final int? currentParticipants;
+  final bool? isMultiUser;
+  final double? durationHours;
   
   ScheduleModel({
     required this.scheduleId,
@@ -48,7 +73,34 @@ class ScheduleModel {
     this.isActive = true,
     this.tags,
     this.customFields,
-    this.assignmentHistory,
+    
+    // Timezone-aware status fields
+    this.scheduleStatus,
+    this.workStatus,
+    this.canCheckIn,
+    this.canCheckOut,
+    this.hasCheckedIn,
+    this.hasCheckedOut,
+    this.isExpired,
+    this.isCompleted,
+    this.isLate,
+    this.checkInTime,
+    this.checkOutTime,
+    this.actualDurationHours,
+    this.timeUntilStartSeconds,
+    this.timeSinceEndSeconds,
+    this.attendanceId,
+    this.attendanceStatus,
+    this.wearingUniform,
+    this.uniformConfidence,
+    
+    // Assignment information
+    this.assignedAt,
+    this.assignmentNotes,
+    this.assignmentStatus,
+    this.currentParticipants,
+    this.isMultiUser,
+    this.durationHours,
   });
 
   // Factory constructor from Supabase map
@@ -57,11 +109,15 @@ class ScheduleModel {
     final id = data['id']?.toString() ?? data['schedule_id']?.toString() ?? '';
     final statusValue = data['status']?.toString() ?? data['schedule_status']?.toString() ?? 'active';
     
-    // Parse dates safely
+    // Parse dates safely with timezone handling
     DateTime parseDateTime(dynamic value) {
       if (value == null) return DateTime.now();
       if (value is DateTime) return value;
-      if (value is String) return DateTime.parse(value);
+      if (value is String) {
+        // Use universal timezone parsing
+        final parsed = TimezoneUtils.parseToLocal(value);
+        return parsed ?? DateTime.now();
+      }
       return DateTime.now();
     }
     
@@ -86,11 +142,34 @@ class ScheduleModel {
       isActive: data['is_active'] as bool? ?? true,
       tags: data['tags'] != null ? List<String>.from(data['tags']) : null,
       customFields: data['custom_fields'] as Map<String, dynamic>?,
-      assignmentHistory: data['assignment_history'] != null
-          ? (data['assignment_history'] as List)
-              .map((e) => ScheduleAssignmentHistory.fromMap(e))
-              .toList()
-          : null,
+      
+      // Timezone-aware status fields
+      scheduleStatus: data['schedule_status']?.toString(),
+      workStatus: data['work_status']?.toString(),
+      canCheckIn: data['can_check_in'] as bool?,
+      canCheckOut: data['can_check_out'] as bool?,
+      hasCheckedIn: data['has_checked_in'] as bool?,
+      hasCheckedOut: data['has_checked_out'] as bool?,
+      isExpired: data['is_expired'] as bool?,
+      isCompleted: data['is_completed'] as bool?,
+      isLate: data['is_late'] as bool?,
+      checkInTime: TimezoneUtils.parseToLocal(data['check_in_time']),
+      checkOutTime: TimezoneUtils.parseToLocal(data['check_out_time']),
+      actualDurationHours: data['actual_duration_hours']?.toDouble(),
+      timeUntilStartSeconds: data['time_until_start_seconds']?.toDouble(),
+      timeSinceEndSeconds: data['time_since_end_seconds']?.toDouble(),
+      attendanceId: data['attendance_id']?.toString(),
+      attendanceStatus: data['attendance_status']?.toString(),
+      wearingUniform: data['wearing_uniform'] as bool?,
+      uniformConfidence: data['uniform_confidence']?.toDouble(),
+      
+      // Assignment information
+      assignedAt: data['assigned_at'] != null ? parseDateTime(data['assigned_at']) : null,
+      assignmentNotes: data['assignment_notes']?.toString(),
+      assignmentStatus: data['assignment_status']?.toString(),
+      currentParticipants: data['current_participants']?.toInt(),
+      isMultiUser: data['is_multi_user'] as bool?,
+      durationHours: data['duration_hours']?.toDouble(),
     );
   }
 
@@ -116,7 +195,6 @@ class ScheduleModel {
       'is_active': isActive,
       'tags': tags,
       'custom_fields': customFields,
-      'assignment_history': assignmentHistory?.map((e) => e.toMap()).toList(),
     };
     
     // Only include id if it's not empty (for updates)
@@ -149,7 +227,6 @@ class ScheduleModel {
     bool? isActive,
     List<String>? tags,
     Map<String, dynamic>? customFields,
-    List<ScheduleAssignmentHistory>? assignmentHistory,
   }) {
     return ScheduleModel(
       scheduleId: scheduleId ?? this.scheduleId,
@@ -172,7 +249,6 @@ class ScheduleModel {
       isActive: isActive ?? this.isActive,
       tags: tags ?? this.tags,
       customFields: customFields ?? this.customFields,
-      assignmentHistory: assignmentHistory ?? this.assignmentHistory,
     );
   }
 

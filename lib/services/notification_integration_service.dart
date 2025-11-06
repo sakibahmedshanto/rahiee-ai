@@ -502,5 +502,309 @@ class NotificationIntegrationService extends GetxService {
       print('Error sending uniform violation notification: $e');
     }
   }
+
+  /// Send notification to employee when attendance status is changed by admin
+  Future<void> notifyEmployeeAttendanceStatusChange({
+    required String employeeId,
+    required String employeeName,
+    required String oldStatus,
+    required String newStatus,
+    required String changedBy,
+    required DateTime changeTime,
+    String? reason,
+    String? notes,
+    String? scheduleId,
+    String? scheduleTitle,
+  }) async {
+    try {
+      String statusEmoji = '';
+      String statusText = '';
+      
+      switch (newStatus.toLowerCase()) {
+        case 'approved':
+          statusEmoji = '✅';
+          statusText = 'approved';
+          break;
+        case 'rejected':
+        case 'cancelled':
+          statusEmoji = '❌';
+          statusText = 'rejected';
+          break;
+        case 'pending':
+          statusEmoji = '⏳';
+          statusText = 'pending review';
+          break;
+        default:
+          statusEmoji = '📋';
+          statusText = 'updated';
+      }
+
+      await _notificationService.sendCustomNotifications(
+        userIds: [employeeId],
+        title: '$statusEmoji Attendance Status $statusText',
+        body: 'Hey {firstName}! Your attendance has been $statusText by $changedBy.${reason != null ? '\n\nReason: $reason' : ''}${notes != null ? '\n\nNotes: $notes' : ''}',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'oldStatus': oldStatus,
+          'newStatus': newStatus,
+          'changedBy': changedBy,
+          'changeTime': changeTime.toIso8601String(),
+          'reason': reason,
+          'notes': notes,
+          'scheduleId': scheduleId,
+          'scheduleTitle': scheduleTitle,
+          'action': 'attendance_status_change',
+          'type': 'attendance_status',
+          'actionType': 'view_attendance_history',
+        },
+        priority: 'normal',
+      );
+
+      print('Attendance status change notification sent to employee: $employeeName');
+    } catch (e) {
+      print('Error sending attendance status change notification: $e');
+    }
+  }
+
+  /// Send notification to employee when schedule exchange is approved
+  Future<void> notifyEmployeeScheduleExchangeApproval({
+    required String employeeId,
+    required String employeeName,
+    required String requesterName,
+    required String scheduleTitle,
+    required DateTime scheduleStartTime,
+    required DateTime scheduleEndTime,
+    required String approvedBy,
+    String? notes,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: [employeeId],
+        title: '✅ Schedule Exchange Approved',
+        body: 'Hey {firstName}! Your schedule exchange request for "$scheduleTitle" with $requesterName has been approved by $approvedBy.${notes != null ? '\n\nNotes: $notes' : ''}',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'requesterName': requesterName,
+          'scheduleTitle': scheduleTitle,
+          'scheduleStartTime': scheduleStartTime.toIso8601String(),
+          'scheduleEndTime': scheduleEndTime.toIso8601String(),
+          'approvedBy': approvedBy,
+          'notes': notes,
+          'action': 'schedule_exchange_approved',
+          'type': 'schedule_exchange',
+          'actionType': 'view_schedule',
+        },
+        priority: 'normal',
+      );
+
+      print('Schedule exchange approval notification sent to employee: $employeeName');
+    } catch (e) {
+      print('Error sending schedule exchange approval notification: $e');
+    }
+  }
+
+  /// Send notification to employee when schedule exchange is rejected
+  Future<void> notifyEmployeeScheduleExchangeRejection({
+    required String employeeId,
+    required String employeeName,
+    required String requesterName,
+    required String scheduleTitle,
+    required DateTime scheduleStartTime,
+    required DateTime scheduleEndTime,
+    required String rejectedBy,
+    String? rejectionReason,
+    String? notes,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: [employeeId],
+        title: '❌ Schedule Exchange Rejected',
+        body: 'Hey {firstName}! Your schedule exchange request for "$scheduleTitle" with $requesterName has been rejected by $rejectedBy.${rejectionReason != null ? '\n\nReason: $rejectionReason' : ''}${notes != null ? '\n\nNotes: $notes' : ''}',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'requesterName': requesterName,
+          'scheduleTitle': scheduleTitle,
+          'scheduleStartTime': scheduleStartTime.toIso8601String(),
+          'scheduleEndTime': scheduleEndTime.toIso8601String(),
+          'rejectedBy': rejectedBy,
+          'rejectionReason': rejectionReason,
+          'notes': notes,
+          'action': 'schedule_exchange_rejected',
+          'type': 'schedule_exchange',
+          'actionType': 'view_schedule',
+        },
+        priority: 'normal',
+      );
+
+      print('Schedule exchange rejection notification sent to employee: $employeeName');
+    } catch (e) {
+      print('Error sending schedule exchange rejection notification: $e');
+    }
+  }
+
+  /// Send notification to employee when schedule exchange is cancelled
+  Future<void> notifyEmployeeScheduleExchangeCancellation({
+    required String employeeId,
+    required String employeeName,
+    required String requesterName,
+    required String scheduleTitle,
+    required DateTime scheduleStartTime,
+    required DateTime scheduleEndTime,
+    required String cancelledBy,
+    String? cancellationReason,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: [employeeId],
+        title: '🚫 Schedule Exchange Cancelled',
+        body: 'Hey {firstName}! Your schedule exchange request for "$scheduleTitle" with $requesterName has been cancelled by $cancelledBy.${cancellationReason != null ? '\n\nReason: $cancellationReason' : ''}',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'requesterName': requesterName,
+          'scheduleTitle': scheduleTitle,
+          'scheduleStartTime': scheduleStartTime.toIso8601String(),
+          'scheduleEndTime': scheduleEndTime.toIso8601String(),
+          'cancelledBy': cancelledBy,
+          'cancellationReason': cancellationReason,
+          'action': 'schedule_exchange_cancelled',
+          'type': 'schedule_exchange',
+          'actionType': 'view_schedule',
+        },
+        priority: 'normal',
+      );
+
+      print('Schedule exchange cancellation notification sent to employee: $employeeName');
+    } catch (e) {
+      print('Error sending schedule exchange cancellation notification: $e');
+    }
+  }
+
+  /// Send notification to employee when schedule is reassigned
+  Future<void> notifyEmployeeScheduleReassignment({
+    required String employeeId,
+    required String employeeName,
+    required String scheduleTitle,
+    required DateTime scheduleStartTime,
+    required DateTime scheduleEndTime,
+    required String location,
+    required String reassignedBy,
+    String? reason,
+    String? notes,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: [employeeId],
+        title: '🔄 Schedule Reassigned',
+        body: 'Hey {firstName}! Your schedule "$scheduleTitle" has been reassigned by $reassignedBy.${reason != null ? '\n\nReason: $reason' : ''}${notes != null ? '\n\nNotes: $notes' : ''}',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'scheduleTitle': scheduleTitle,
+          'scheduleStartTime': scheduleStartTime.toIso8601String(),
+          'scheduleEndTime': scheduleEndTime.toIso8601String(),
+          'location': location,
+          'reassignedBy': reassignedBy,
+          'reason': reason,
+          'notes': notes,
+          'action': 'schedule_reassignment',
+          'type': 'schedule_update',
+          'actionType': 'view_schedule',
+        },
+        priority: 'normal',
+      );
+
+      print('Schedule reassignment notification sent to employee: $employeeName');
+    } catch (e) {
+      print('Error sending schedule reassignment notification: $e');
+    }
+  }
+
+  /// Send notification to employee when schedule is cancelled
+  Future<void> notifyEmployeeScheduleCancellation({
+    required String employeeId,
+    required String employeeName,
+    required String scheduleTitle,
+    required DateTime scheduleStartTime,
+    required DateTime scheduleEndTime,
+    required String location,
+    required String cancelledBy,
+    String? reason,
+    String? notes,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: [employeeId],
+        title: '🚫 Schedule Cancelled',
+        body: 'Hey {firstName}! Your schedule "$scheduleTitle" has been cancelled by $cancelledBy.${reason != null ? '\n\nReason: $reason' : ''}${notes != null ? '\n\nNotes: $notes' : ''}',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'scheduleTitle': scheduleTitle,
+          'scheduleStartTime': scheduleStartTime.toIso8601String(),
+          'scheduleEndTime': scheduleEndTime.toIso8601String(),
+          'location': location,
+          'cancelledBy': cancelledBy,
+          'reason': reason,
+          'notes': notes,
+          'action': 'schedule_cancellation',
+          'type': 'schedule_update',
+          'actionType': 'view_schedule',
+        },
+        priority: 'high',
+      );
+
+      print('Schedule cancellation notification sent to employee: $employeeName');
+    } catch (e) {
+      print('Error sending schedule cancellation notification: $e');
+    }
+  }
+
+  /// Send notification to employee when schedule is updated
+  Future<void> notifyEmployeeScheduleUpdate({
+    required String employeeId,
+    required String employeeName,
+    required String scheduleTitle,
+    required DateTime oldStartTime,
+    required DateTime oldEndTime,
+    required DateTime newStartTime,
+    required DateTime newEndTime,
+    required String location,
+    required String updatedBy,
+    String? changes,
+    String? notes,
+  }) async {
+    try {
+      await _notificationService.sendCustomNotifications(
+        userIds: [employeeId],
+        title: '📝 Schedule Updated',
+        body: 'Hey {firstName}! Your schedule "$scheduleTitle" has been updated by $updatedBy.${changes != null ? '\n\nChanges: $changes' : ''}${notes != null ? '\n\nNotes: $notes' : ''}',
+        data: {
+          'employeeId': employeeId,
+          'employeeName': employeeName,
+          'scheduleTitle': scheduleTitle,
+          'oldStartTime': oldStartTime.toIso8601String(),
+          'oldEndTime': oldEndTime.toIso8601String(),
+          'newStartTime': newStartTime.toIso8601String(),
+          'newEndTime': newEndTime.toIso8601String(),
+          'location': location,
+          'updatedBy': updatedBy,
+          'changes': changes,
+          'notes': notes,
+          'action': 'schedule_update',
+          'type': 'schedule_update',
+          'actionType': 'view_schedule',
+        },
+        priority: 'normal',
+      );
+
+      print('Schedule update notification sent to employee: $employeeName');
+    } catch (e) {
+      print('Error sending schedule update notification: $e');
+    }
+  }
 }
 

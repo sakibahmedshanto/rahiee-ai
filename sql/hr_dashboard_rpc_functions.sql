@@ -17,7 +17,10 @@ AS $$
 DECLARE
     v_result JSON;
     v_today DATE := CURRENT_DATE;
+    v_yesterday DATE := CURRENT_DATE - INTERVAL '1 day';
 BEGIN
+    -- Try to get data from today first, then yesterday if today has no data
+    -- This handles timezone differences where check-ins might be stored with yesterday's date
     SELECT json_build_object(
         'today', json_build_object(
             'date', v_today,
@@ -58,9 +61,11 @@ BEGIN
         mas.year = EXTRACT(YEAR FROM v_today)::INTEGER AND
         mas.month = EXTRACT(MONTH FROM v_today)::INTEGER
     )
-    WHERE das.summary_date = v_today;
+    WHERE das.summary_date = v_today OR das.summary_date = v_yesterday
+    ORDER BY das.summary_date DESC
+    LIMIT 1;
     
-    -- If no data exists for today, return default values
+    -- If no data exists for today or yesterday, return default values
     IF v_result IS NULL THEN
         v_result := json_build_object(
             'today', json_build_object(

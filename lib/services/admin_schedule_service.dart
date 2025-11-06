@@ -46,8 +46,8 @@ class AdminScheduleService {
       final response = await _supabase.rpc('admin_create_schedule', params: {
         'p_admin_id': adminId,
         'p_title': title,
-        'p_start_date_time': startDateTime.toIso8601String(),
-        'p_end_date_time': endDateTime.toIso8601String(),
+        'p_start_date_time': startDateTime.toUtc().toIso8601String(),
+        'p_end_date_time': endDateTime.toUtc().toIso8601String(),
         'p_department': department,
         'p_location': location,
         'p_description': description,
@@ -102,8 +102,8 @@ class AdminScheduleService {
     try {
       final params = {
         'p_admin_id': adminId,
-        'p_start_date': startDate?.toIso8601String().split('T')[0],
-        'p_end_date': endDate?.toIso8601String().split('T')[0],
+        'p_start_date': startDate?.toUtc().toIso8601String().split('T')[0],
+        'p_end_date': endDate?.toUtc().toIso8601String().split('T')[0],
         'p_department': department,
         'p_status': status,
         'p_assigned_user_id': assignedUserId,
@@ -165,8 +165,8 @@ class AdminScheduleService {
         'p_schedule_id': scheduleId,
         'p_title': title,
         'p_description': description,
-        'p_start_date_time': startDateTime?.toIso8601String(),
-        'p_end_date_time': endDateTime?.toIso8601String(),
+        'p_start_date_time': startDateTime?.toUtc().toIso8601String(),
+        'p_end_date_time': endDateTime?.toUtc().toIso8601String(),
         'p_department': department,
         'p_location': location,
         'p_latitude': latitude,
@@ -253,8 +253,8 @@ class AdminScheduleService {
     try {
       final params = {
         'p_admin_id': adminId,
-        'p_start_date_time': startDateTime?.toIso8601String(),
-        'p_end_date_time': endDateTime?.toIso8601String(),
+        'p_start_date_time': startDateTime?.toUtc().toIso8601String(),
+        'p_end_date_time': endDateTime?.toUtc().toIso8601String(),
         'p_department': department,
       };
       

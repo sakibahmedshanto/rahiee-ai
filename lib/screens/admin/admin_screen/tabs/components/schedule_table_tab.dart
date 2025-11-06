@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../../controllers/admin_controllers/admin_controller.dart';
 import '../../../../../controllers/admin_controllers/admin_schedule_controller.dart';
 import '../../../../../utils/app_constant.dart';
+import '../../../../../utils/timezone_utils.dart';
 
 class ScheduleTableTab extends StatefulWidget {
   final AdminController adminController;
@@ -298,8 +299,11 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
   String _formatDateTime(String? dateTime) {
     if (dateTime == null) return '--';
     try {
-      final dt = DateTime.parse(dateTime);
-      return '${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+      // Use universal timezone conversion to convert UTC to local time
+      final localDateTime = TimezoneUtils.parseToLocal(dateTime);
+      if (localDateTime == null) return 'Invalid';
+      
+      return '${localDateTime.day}/${localDateTime.month}/${localDateTime.year} ${localDateTime.hour}:${localDateTime.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return 'Invalid';
     }

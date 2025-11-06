@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/admin_controllers/admin_schedule_controller.dart';
+import '../../../utils/timezone_utils.dart';
 
 /// Example UI screen for admin schedule management
 /// This is a basic implementation - customize according to your UI design
@@ -139,8 +140,9 @@ class AdminScheduleManagementScreen extends StatelessWidget {
   }
 
   Widget _buildScheduleCard(Map<String, dynamic> schedule) {
-    final startTime = DateTime.parse(schedule['start_date_time']);
-    final endTime = DateTime.parse(schedule['end_date_time']);
+    // Use universal timezone conversion for start and end times
+    final startTime = TimezoneUtils.parseToLocal(schedule['start_date_time']);
+    final endTime = TimezoneUtils.parseToLocal(schedule['end_date_time']);
     final assignedUser = schedule['assigned_user'];
     
     return Card(
@@ -152,7 +154,7 @@ class AdminScheduleManagementScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${schedule['department']} • ${schedule['location']}'),
-              Text('${_formatDateTime(startTime)} - ${_formatDateTime(endTime)}'),
+              Text('${startTime != null ? _formatDateTime(startTime) : 'Invalid'} - ${endTime != null ? _formatDateTime(endTime) : 'Invalid'}'),
               if (assignedUser != null)
                 Text('Assigned to: ${assignedUser['full_name']}'),
             ],
@@ -202,7 +204,9 @@ class AdminScheduleManagementScreen extends StatelessWidget {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    // Convert to local timezone for display
+    final localDateTime = dateTime.toLocal();
+    return '${localDateTime.day}/${localDateTime.month}/${localDateTime.year} ${localDateTime.hour}:${localDateTime.minute.toString().padLeft(2, '0')}';
   }
 
   void _showCreateScheduleDialog(BuildContext context) {

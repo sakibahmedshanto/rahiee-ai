@@ -26,27 +26,30 @@ class ScheduleService extends GetxService {
     }
   }
 
-  // Get schedules for a specific user with comprehensive exchange support
+  // Get schedules for a specific user with timezone-aware status
   Future<List<ScheduleModel>> getSchedulesForUser(
     String userId, {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
     try {
-      // Use the correct RPC function that exists in the database
-      final response = await _supabaseService.client?.rpc('get_schedules_with_attendance_status', params: {
-        'p_employee_id': userId,
+      // Use the new timezone-aware RPC function
+      final response = await _supabaseService.client?.rpc('get_schedules_with_timezone_status', params: {
+        'p_user_id': userId,
         'p_date': startDate?.toIso8601String().split('T')[0] ?? DateTime.now().toIso8601String().split('T')[0],
       });
 
-      print('DEBUG: RPC response for user schedules: $response');
+      print('DEBUG: Timezone-aware RPC response for user schedules: $response');
       print('DEBUG: Response type: ${response.runtimeType}');
 
-      if (response != null) {
+      if (response != null && response['success'] == true) {
         // Check if schedules exist in the response
         if (response['schedules'] != null) {
           final schedulesData = List<Map<String, dynamic>>.from(response['schedules']);
-          print('DEBUG: Found ${schedulesData.length} schedules in RPC response');
+          print('DEBUG: Found ${schedulesData.length} schedules with timezone status');
+          print('DEBUG: Current UTC time: ${response['current_time_utc']}');
+          print('DEBUG: Total schedules: ${response['total_schedules']}');
+          print('DEBUG: Completed: ${response['completed_schedules']}, Active: ${response['active_schedules']}, Expired: ${response['expired_schedules']}');
           return schedulesData
               .map((data) => ScheduleModel.fromMap(data))
               .toList();

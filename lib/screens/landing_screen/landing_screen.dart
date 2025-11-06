@@ -7,7 +7,7 @@ import '../../models/user_model.dart';
 import '../../utils/app_constant.dart';
 import '../../controllers/landing_screen_controller/landing_controller.dart';
 import '../profile_screen/profile_screen.dart';
-import '../schedule_screen/unified_schedule_screen.dart';
+import '../schedule_screen/schedule_screen.dart';
 import '../notifications/notifications_screen.dart';
 import 'components/landing_bottom_navigation.dart';
 
@@ -44,7 +44,7 @@ class _LandingScreenState extends State<LandingScreen> {
         child: Obx(() {
           switch (_selectedIndex.value) {
             case 0:
-              return const UnifiedScheduleScreen();
+              return const ScheduleScreen();
             case 1:
               return const AttendanceHistoryScreen();
             case 2:
@@ -52,7 +52,7 @@ class _LandingScreenState extends State<LandingScreen> {
             case 3:
               return const ProfileScreen();
             default:
-              return const UnifiedScheduleScreen();
+              return const ScheduleScreen();
           }
         }),
       ),

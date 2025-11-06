@@ -187,6 +187,19 @@ class ScheduleExchangeController extends GetxController {
           // Don't fail the operation if notification fails
         }
         
+        // Send notification to employees involved in the exchange
+        try {
+          await _sendEmployeeNotificationForExchangeAction(
+            result: result,
+            action: action,
+            adminNotes: adminNotes,
+            rejectionReason: rejectionReason,
+          );
+        } catch (e) {
+          print('Error sending employee notification for exchange action: $e');
+          // Don't fail the operation if notification fails
+        }
+        
         // If approved, also refresh schedule data for affected users
         if (action == 'approve') {
           // Trigger schedule refresh for both users
@@ -556,6 +569,114 @@ class ScheduleExchangeController extends GetxController {
       print('Admin notification sent for exchange $action');
     } catch (e) {
       print('Error in _sendAdminNotificationForExchangeAction: $e');
+    }
+  }
+
+  /// Send notification to employees involved in exchange action (approve/reject/cancel)
+  Future<void> _sendEmployeeNotificationForExchangeAction({
+    required Map<String, dynamic> result,
+    required String action,
+    String? adminNotes,
+    String? rejectionReason,
+  }) async {
+    try {
+      // Extract data from result
+      final requesterName = result['requester_name'] ?? 'Unknown User';
+      final requestedName = result['requested_name'] ?? 'Unknown User';
+      final scheduleTitle = result['schedule_title'] ?? 'Unknown Schedule';
+      final adminName = result['admin_name'] ?? 'Admin';
+
+      // Get requester and requested user IDs from the request
+      final requestId = result['request_id'];
+      if (requestId == null) {
+        print('Cannot send employee notification: request ID not available');
+        return;
+      }
+
+      // Find the request details from the exchange requests
+      final request = exchangeRequests.firstWhereOrNull(
+        (req) => req['request_id'] == requestId,
+      );
+      
+      if (request == null) {
+        print('Cannot send employee notification: request details not found');
+        return;
+      }
+
+      final requesterId = request['requester_info']?['id'];
+      final requestedUserId = request['requested_user_info']?['id'];
+      final scheduleStartTime = DateTime.tryParse(request['schedule_info']?['start_time'] ?? '');
+      final scheduleEndTime = DateTime.tryParse(request['schedule_info']?['end_time'] ?? '');
+
+      if (requesterId == null || requestedUserId == null || scheduleStartTime == null || scheduleEndTime == null) {
+        print('Cannot send employee notification: missing required data');
+        return;
+      }
+
+      if (action == 'approve') {
+        // Notify both employees about approval
+        await _notificationService.notifyEmployeeScheduleExchangeApproval(
+          employeeId: requesterId,
+          employeeName: requesterName,
+          requesterName: requesterName,
+          scheduleTitle: scheduleTitle,
+          scheduleStartTime: scheduleStartTime,
+          scheduleEndTime: scheduleEndTime,
+          approvedBy: adminName,
+          notes: adminNotes,
+        );
+
+        await _notificationService.notifyEmployeeScheduleExchangeApproval(
+          employeeId: requestedUserId,
+          employeeName: requestedName,
+          requesterName: requesterName,
+          scheduleTitle: scheduleTitle,
+          scheduleStartTime: scheduleStartTime,
+          scheduleEndTime: scheduleEndTime,
+          approvedBy: adminName,
+          notes: adminNotes,
+        );
+      } else if (action == 'reject') {
+        // Notify requester about rejection
+        await _notificationService.notifyEmployeeScheduleExchangeRejection(
+          employeeId: requesterId,
+          employeeName: requesterName,
+          requesterName: requesterName,
+          scheduleTitle: scheduleTitle,
+          scheduleStartTime: scheduleStartTime,
+          scheduleEndTime: scheduleEndTime,
+          rejectedBy: adminName,
+          rejectionReason: rejectionReason,
+          notes: adminNotes,
+        );
+      } else if (action == 'cancel') {
+        // Notify both employees about cancellation
+        await _notificationService.notifyEmployeeScheduleExchangeCancellation(
+          employeeId: requesterId,
+          employeeName: requesterName,
+          requesterName: requesterName,
+          scheduleTitle: scheduleTitle,
+          scheduleStartTime: scheduleStartTime,
+          scheduleEndTime: scheduleEndTime,
+          cancelledBy: adminName,
+          cancellationReason: adminNotes,
+        );
+
+        await _notificationService.notifyEmployeeScheduleExchangeCancellation(
+          employeeId: requestedUserId,
+          employeeName: requestedName,
+          requesterName: requesterName,
+          scheduleTitle: scheduleTitle,
+          scheduleStartTime: scheduleStartTime,
+          scheduleEndTime: scheduleEndTime,
+          cancelledBy: adminName,
+          cancellationReason: adminNotes,
+        );
+      }
+
+      print('Employee notifications sent for exchange $action');
+    } catch (e) {
+      print('Error in _sendEmployeeNotificationForExchangeAction: $e');
     }
   }
 }

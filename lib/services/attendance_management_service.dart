@@ -401,6 +401,29 @@ class AttendanceManagementService extends GetxService {
     return await getAttendanceForDate(date: DateTime.now());
   }
 
+  // Get current active check-in status for user
+  Future<Map<String, dynamic>?> getCurrentCheckInStatus({
+    String? employeeId,
+    DateTime? date,
+  }) async {
+    try {
+      final currentUserId = _supabaseService.currentUser?.id;
+      if (currentUserId == null) return null;
+      
+      final targetEmployeeId = employeeId ?? currentUserId;
+
+      // Get any active attendance (checked in but not checked out) - check all dates
+      final response = await _requireClient().rpc('get_any_active_checkin', params: {
+        'p_employee_id': targetEmployeeId,
+      });
+
+      return response != null ? Map<String, dynamic>.from(response) : null;
+    } catch (e) {
+      print('Error getting current check-in status: $e');
+      return null;
+    }
+  }
+
   // Load pending attendance approvals with filters (for admins)
   Future<List<Map<String, dynamic>>> loadPendingApprovalsWithFilters({
     String? department,

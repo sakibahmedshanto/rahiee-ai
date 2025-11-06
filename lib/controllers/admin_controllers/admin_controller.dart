@@ -10,6 +10,7 @@ import '../../models/user_model.dart';
 import '../../models/attendance_model.dart';
 import '../../models/schedule_model.dart';
 import '../../utils/app_constant.dart';
+import '../../services/notification_integration_service.dart';
 
 class AdminController extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -490,7 +491,7 @@ class AdminController extends GetxController {
             check_out_time,
             status,
             is_late,
-            my_users!inner(name, department)
+            my_users!attendance_user_id_fkey(name, department)
           ''')
           .order('created_at', ascending: false)
           .limit(10);
@@ -856,6 +857,28 @@ class AdminController extends GetxController {
         return false;
       }
 
+      // Get the attendance record details before updating
+      final attendanceRecord = await _supabase
+          .from('attendance')
+          .select('''
+            *,
+            my_users!attendance_user_id_fkey(full_name, email),
+            employee_schedules!inner(title, location, start_date_time, end_date_time)
+          ''')
+          .eq('id', attendanceId)
+          .maybeSingle();
+
+      if (attendanceRecord == null) {
+        print('Error: Attendance record not found');
+        return false;
+      }
+
+      final oldStatus = attendanceRecord['status'] as String;
+      final employeeId = attendanceRecord['user_id'] as String;
+      final employeeName = attendanceRecord['my_users']['full_name'] as String;
+      final scheduleTitle = attendanceRecord['employee_schedules']['title'] as String;
+      final scheduleId = attendanceRecord['schedule_id'] as String;
+
       final response = await _supabase.rpc('admin_update_attendance_status', params: {
         'p_attendance_id': attendanceId,
         'p_admin_id': currentUser.id,
@@ -867,6 +890,27 @@ class AdminController extends GetxController {
       });
 
       if (response != null && response['success'] == true) {
+        // Send notification to employee about status change
+        try {
+          final notificationService = Get.find<NotificationIntegrationService>();
+          await notificationService.notifyEmployeeAttendanceStatusChange(
+            employeeId: employeeId,
+            employeeName: employeeName,
+            oldStatus: oldStatus,
+            newStatus: newStatus,
+            changedBy: currentUser.userMetadata?['full_name'] ?? 'Admin',
+            changeTime: DateTime.now(),
+            reason: reviewReason,
+            notes: adminNotes,
+            scheduleId: scheduleId,
+            scheduleTitle: scheduleTitle,
+          );
+          print('✅ Notification sent to employee about attendance status change');
+        } catch (e) {
+          print('⚠️ Failed to send notification: $e');
+          // Don't fail the whole operation if notification fails
+        }
+
         // Refresh the attendance table data
         await loadAttendanceTableData();
         return true;

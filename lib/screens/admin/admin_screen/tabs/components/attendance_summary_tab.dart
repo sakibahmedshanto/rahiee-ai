@@ -222,13 +222,12 @@ class AttendanceSummaryTab extends StatelessWidget {
   Widget _buildAttendanceStatusChart() {
     final todayData = controller.todayData;
     
-    // Calculate real percentages from data
+    // Calculate real percentages from data (excluding Late)
     final totalPresent = (todayData['total_present'] ?? 0) as int;
     final totalPending = (todayData['pending_approvals'] ?? 0) as int;
     final totalAbsent = (todayData['total_absent'] ?? 0) as int;
-    final totalLate = (todayData['total_late'] ?? 0) as int;
     
-    final total = totalPresent + totalPending + totalAbsent + totalLate;
+    final total = totalPresent + totalPending + totalAbsent;
     
     if (total == 0) {
       return Container(
@@ -274,10 +273,9 @@ class AttendanceSummaryTab extends StatelessWidget {
       );
     }
 
-    final presentPercentage = (totalPresent / total * 100);
-    final pendingPercentage = (totalPending / total * 100);
-    final absentPercentage = (totalAbsent / total * 100);
-    final latePercentage = (totalLate / total * 100);
+    final presentPercentage = total > 0 ? (totalPresent / total * 100) : 0.0;
+    final pendingPercentage = total > 0 ? (totalPending / total * 100) : 0.0;
+    final absentPercentage = total > 0 ? (totalAbsent / total * 100) : 0.0;
 
     return Container(
       padding: EdgeInsets.all(20),
@@ -380,18 +378,6 @@ class AttendanceSummaryTab extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                  if (latePercentage > 0)
-                    PieChartSectionData(
-                      value: latePercentage,
-                      title: '${latePercentage.toStringAsFixed(0)}%',
-                      color: Colors.grey,
-                      radius: 60,
-                      titleStyle: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
                 ],
                 borderData: FlBorderData(show: false),
                 sectionsSpace: 2,
@@ -400,19 +386,18 @@ class AttendanceSummaryTab extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16),
-          _buildLegend(presentPercentage, pendingPercentage, absentPercentage, latePercentage),
+          _buildLegend(presentPercentage, pendingPercentage, absentPercentage),
         ],
       ),
     );
   }
 
-  Widget _buildLegend(double present, double pending, double absent, double late) {
+  Widget _buildLegend(double present, double pending, double absent) {
     return Column(
       children: [
         if (present > 0) _buildLegendItem('Present', Colors.green, '${present.toStringAsFixed(1)}%'),
         if (pending > 0) _buildLegendItem('Pending', Colors.orange, '${pending.toStringAsFixed(1)}%'),
         if (absent > 0) _buildLegendItem('Absent', Colors.red, '${absent.toStringAsFixed(1)}%'),
-        if (late > 0) _buildLegendItem('Late', Colors.grey, '${late.toStringAsFixed(1)}%'),
       ],
     );
   }

@@ -14,24 +14,22 @@ class AttendancePieChartWidget extends StatelessWidget {
     final AdminController controller = Get.find<AdminController>();
 
     return Obx(() {
-      // Get real-time data from controller
+      // Get real-time data from controller (excluding Late)
       final totalPresent = controller.totalCheckedInToday.value;
       final totalAbsent = controller.totalAbsentToday.value;
       final totalPending = controller.totalPendingApprovals.value;
-      final totalLate = controller.totalLateToday.value;
       
-      // Calculate total for percentages
-      final total = totalPresent + totalAbsent + totalPending + totalLate;
+      // Calculate total for percentages (excluding Late)
+      final total = totalPresent + totalAbsent + totalPending;
       
       if (total == 0) {
         return _buildEmptyState();
       }
 
       // Calculate percentages
-      final presentPercentage = (totalPresent / total * 100);
-      final absentPercentage = (totalAbsent / total * 100);
-      final pendingPercentage = (totalPending / total * 100);
-      final latePercentage = (totalLate / total * 100);
+      final presentPercentage = total > 0 ? (totalPresent / total * 100) : 0.0;
+      final absentPercentage = total > 0 ? (totalAbsent / total * 100) : 0.0;
+      final pendingPercentage = total > 0 ? (totalPending / total * 100) : 0.0;
 
       return Container(
         padding: EdgeInsets.all(20),
@@ -109,33 +107,31 @@ class AttendancePieChartWidget extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLegendItem(
-                        'Present',
-                        presentPercentage,
-                        AppConstant.successColor,
-                        totalPresent,
-                      ),
-                      SizedBox(height: 8),
-                      _buildLegendItem(
-                        'Pending',
-                        pendingPercentage,
-                        AppConstant.warningColor,
-                        totalPending,
-                      ),
-                      SizedBox(height: 8),
-                      _buildLegendItem(
-                        'Absent',
-                        absentPercentage,
-                        AppConstant.errorColor,
-                        totalAbsent,
-                      ),
-                      SizedBox(height: 8),
-                      _buildLegendItem(
-                        'Late',
-                        latePercentage,
-                        Colors.orange,
-                        totalLate,
-                      ),
+                      if (presentPercentage > 0) ...[
+                        _buildLegendItem(
+                          'Present',
+                          presentPercentage,
+                          AppConstant.successColor,
+                          totalPresent,
+                        ),
+                        SizedBox(height: 8),
+                      ],
+                      if (pendingPercentage > 0) ...[
+                        _buildLegendItem(
+                          'Pending',
+                          pendingPercentage,
+                          AppConstant.warningColor,
+                          totalPending,
+                        ),
+                        SizedBox(height: 8),
+                      ],
+                      if (absentPercentage > 0)
+                        _buildLegendItem(
+                          'Absent',
+                          absentPercentage,
+                          AppConstant.errorColor,
+                          totalAbsent,
+                        ),
                     ],
                   ),
                 ),
@@ -150,50 +146,42 @@ class AttendancePieChartWidget extends StatelessWidget {
                     child: PieChart(
                       PieChartData(
                         sections: [
-                          PieChartSectionData(
-                            value: presentPercentage,
-                            title: '${presentPercentage.toStringAsFixed(0)}%',
-                            color: AppConstant.successColor,
-                            radius: 60,
-                            titleStyle: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          if (presentPercentage > 0)
+                            PieChartSectionData(
+                              value: presentPercentage,
+                              title: '${presentPercentage.toStringAsFixed(0)}%',
+                              color: AppConstant.successColor,
+                              radius: 60,
+                              titleStyle: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                          PieChartSectionData(
-                            value: pendingPercentage,
-                            title: '${pendingPercentage.toStringAsFixed(0)}%',
-                            color: AppConstant.warningColor,
-                            radius: 60,
-                            titleStyle: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          if (pendingPercentage > 0)
+                            PieChartSectionData(
+                              value: pendingPercentage,
+                              title: '${pendingPercentage.toStringAsFixed(0)}%',
+                              color: AppConstant.warningColor,
+                              radius: 60,
+                              titleStyle: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                          PieChartSectionData(
-                            value: absentPercentage,
-                            title: '${absentPercentage.toStringAsFixed(0)}%',
-                            color: AppConstant.errorColor,
-                            radius: 60,
-                            titleStyle: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          if (absentPercentage > 0)
+                            PieChartSectionData(
+                              value: absentPercentage,
+                              title: '${absentPercentage.toStringAsFixed(0)}%',
+                              color: AppConstant.errorColor,
+                              radius: 60,
+                              titleStyle: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                          PieChartSectionData(
-                            value: latePercentage,
-                            title: '${latePercentage.toStringAsFixed(0)}%',
-                            color: Colors.orange,
-                            radius: 60,
-                            titleStyle: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
                         ],
                         sectionsSpace: 2,
                         centerSpaceRadius: 40,
