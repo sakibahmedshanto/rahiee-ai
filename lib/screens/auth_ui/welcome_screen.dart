@@ -1,8 +1,10 @@
+import 'dart:ui';
+
 import 'sign_in_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../controllers/auth_controller/google_sign_in_controller.dart';
+// import '../../../controllers/auth_controller/google_sign_in_controller.dart';
 import '../../utils/app_constant.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -13,8 +15,8 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateMixin {
-  final GoogleSignInController _googleSignInController =
-      Get.put(GoogleSignInController());
+  // final GoogleSignInController _googleSignInController =
+  //     Get.put(GoogleSignInController());
   
   late AnimationController _animationController;
   late AnimationController _pulseController;
@@ -98,201 +100,136 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppConstant.gradientStart,
-              AppConstant.gradientEnd,
-              AppConstant.primaryColor,
-            ],
-            stops: [0.0, 0.7, 1.0],
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppConstant.gradientStart,
+                  AppConstant.gradientEnd,
+                  AppConstant.primaryColor,
+                ],
+                stops: [0.0, 0.7, 1.0],
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Container(
-              height: Get.height - MediaQuery.of(context).padding.top,
-              child: Column(
-                children: [
-                  // Logo and Branding Section
-                  Expanded(
-                    flex: 5,
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Animated Logo Container
-                            AnimatedBuilder(
-                              animation: _pulseAnimation,
-                              builder: (context, child) {
-                                return Transform.scale(
-                                  scale: _pulseAnimation.value,
-                                  child: Container(
-                                    padding: EdgeInsets.all(25),
-                                    decoration: BoxDecoration(
-                                      // Beautiful gradient background for the logo
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Colors.white.withOpacity(0.95),
-                                          Colors.white.withOpacity(0.85),
-                                          AppConstant.backgroundColor.withOpacity(0.9),
-                                        ],
-                                        stops: [0.0, 0.5, 1.0],
-                                      ),
-                                      borderRadius: BorderRadius.circular(25),
-                                      border: Border.all(
-                                        color: Colors.white.withOpacity(0.6),
-                                        width: 2,
-                                      ),
-                                      boxShadow: [
-                                        // Outer glow effect
-                                        BoxShadow(
-                                          color: Colors.white.withOpacity(0.3),
-                                          blurRadius: 30,
-                                          spreadRadius: 8,
-                                        ),
-                                        // Inner shadow for depth
-                                        BoxShadow(
-                                          color: AppConstant.secondaryColor.withOpacity(0.1),
-                                          blurRadius: 20,
-                                          offset: Offset(0, 10),
-                                        ),
-                                        // Subtle top highlight
-                                        BoxShadow(
-                                          color: Colors.white.withOpacity(0.8),
-                                          blurRadius: 5,
-                                          offset: Offset(0, -2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Image.asset(
-                                      'assets/logo/tanainent_logo.png',
-                                      height: Get.height * 0.15,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            
-                            SizedBox(height: 20),
-                            
-                            // Brand Name
-                            Text(
-                              AppConstant.appMainName,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withOpacity(0.3),
-                                    offset: Offset(0, 2),
-                                    blurRadius: 8,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            SizedBox(height: 8),
-                            
-                            // Tagline
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 20),
-                              child: Text(
-                                AppConstant.appTagline,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontWeight: FontWeight.w300,
-                                  height: 1.2,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  // Action Buttons Section
-                  Expanded(
-                    flex: 4,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(30),
-                            topRight: Radius.circular(30),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 25,
-                              offset: Offset(0, -8),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+          Positioned(
+            top: -80,
+            right: -40,
+            child: _buildAuraCircle(180, Colors.white.withOpacity(0.08)),
+          ),
+          Positioned(
+            bottom: 120,
+            left: -60,
+            child: _buildAuraCircle(220, AppConstant.secondaryColor.withOpacity(0.15)),
+          ),
+          Positioned(
+            bottom: -90,
+            right: -30,
+            child: _buildAuraCircle(180, Colors.white.withOpacity(0.05)),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: SizedBox(
+                height: Get.height - MediaQuery.of(context).padding.top,
+                child: Column(
+                  children: [
+                    // Logo and Branding Section
+                    Expanded(
+                      flex: 5,
+                      child: FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Welcome Text
+                              // Animated Logo Container
+                              AnimatedBuilder(
+                                animation: _pulseAnimation,
+                                builder: (context, child) {
+                                  return Transform.scale(
+                                    scale: _pulseAnimation.value,
+                                    child: Container(
+                                      padding: EdgeInsets.all(28),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Colors.white.withOpacity(0.95),
+                                            Colors.white.withOpacity(0.75),
+                                            AppConstant.backgroundColor.withOpacity(0.85),
+                                          ],
+                                          stops: [0.0, 0.4, 1.0],
+                                        ),
+                                        borderRadius: BorderRadius.circular(28),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.65),
+                                          width: 2,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.white.withOpacity(0.35),
+                                            blurRadius: 35,
+                                            spreadRadius: 10,
+                                          ),
+                                          BoxShadow(
+                                            color: AppConstant.secondaryColor.withOpacity(0.1),
+                                            blurRadius: 25,
+                                            offset: Offset(0, 12),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Image.asset(
+                                        'assets/logo/tanainent_logo.png',
+                                        height: Get.height * 0.15,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              
+                              SizedBox(height: 22),
+                              
+                              // Brand Name
                               Text(
-                                "Welcome to the Future",
+                                AppConstant.appMainName,
                                 style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppConstant.textPrimary,
-                                  letterSpacing: 0.3,
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 1.2,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.25),
+                                      offset: Offset(0, 3),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
                                 ),
                               ),
                               
-                              SizedBox(height: 6),
+                              SizedBox(height: 10),
                               
-                              Text(
-                                "Choose your preferred sign-in method",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppConstant.textSecondary,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              
-                              SizedBox(height: 25),
-                              
-                              // Google Sign In Button
-                              _buildGoogleSignInButton(),
-                              
-                              SizedBox(height: 12),
-                              
-                              // Email Sign In Button
-                              _buildEmailSignInButton(),
-                              
-                              SizedBox(height: 15),
-                              
-                              // Terms and Privacy
-                              Text(
-                                "By continuing, you agree to our Terms of Service\nand Privacy Policy",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: AppConstant.textSecondary,
-                                  height: 1.2,
+                              // Tagline
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 28),
+                                child: Text(
+                                  "A refined workspace companion for visionary teams.",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white.withOpacity(0.88),
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.3,
+                                    letterSpacing: 0.4,
+                                  ),
                                 ),
                               ),
                             ],
@@ -300,73 +237,105 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    
+                    // Action Button Section
+                    Expanded(
+                      flex: 4,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: _buildEmailSignInButton(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildGoogleSignInButton() {
+  // Widget _buildGoogleSignInButton() {
+  //   return Container(
+  //     width: double.infinity,
+  //     height: 56,
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(15),
+  //       border: Border.all(
+  //         color: Colors.grey.withOpacity(0.3),
+  //         width: 1.5,
+  //       ),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.05),
+  //           blurRadius: 15,
+  //           offset: Offset(0, 5),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Material(
+  //       color: Colors.transparent,
+  //       child: InkWell(
+  //         borderRadius: BorderRadius.circular(15),
+  //         onTap: () async {
+  //           bool success = await _googleSignInController.signInWithGoogle();
+  //           if (!success) {
+  //             Get.snackbar(
+  //               'Error',
+  //               'Failed to sign in with Google. Please try again.',
+  //               snackPosition: SnackPosition.BOTTOM,
+  //               backgroundColor: AppConstant.errorColor,
+  //               colorText: Colors.white,
+  //               borderRadius: 15,
+  //               margin: EdgeInsets.all(15),
+  //             );
+  //           }
+  //         },
+  //         child: Row(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: [
+  //             Image.asset(
+  //               'assets/icons/google_icon.png',
+  //               width: 24,
+  //               height: 24,
+  //             ),
+  //             SizedBox(width: 15),
+  //             Text(
+  //               "Continue with Google",
+  //               style: TextStyle(
+  //                 fontSize: 16,
+  //                 fontWeight: FontWeight.w600,
+  //                 color: AppConstant.textPrimary,
+  //                 letterSpacing: 0.5,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  Widget _buildAuraCircle(double diameter, Color color) {
     return Container(
-      width: double.infinity,
-      height: 56,
+      width: diameter,
+      height: diameter,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(15),
-          onTap: () async {
-            bool success = await _googleSignInController.signInWithGoogle();
-            if (!success) {
-              Get.snackbar(
-                'Error',
-                'Failed to sign in with Google. Please try again.',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: AppConstant.errorColor,
-                colorText: Colors.white,
-                borderRadius: 15,
-                margin: EdgeInsets.all(15),
-              );
-            }
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/icons/google_icon.png',
-                width: 24,
-                height: 24,
-              ),
-              SizedBox(width: 15),
-              Text(
-                "Continue with Google",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppConstant.textPrimary,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color,
+            Colors.transparent,
+          ],
+          stops: const [0.0, 1.0],
         ),
       ),
     );
@@ -375,48 +344,81 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
   Widget _buildEmailSignInButton() {
     return Container(
       width: double.infinity,
-      height: 56,
+      height: 52,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppConstant.gradientStart, AppConstant.gradientEnd],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          colors: [
+            Colors.white.withOpacity(0.32),
+            Colors.white.withOpacity(0.18),
+            AppConstant.secondaryColor.withOpacity(0.75),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.6),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppConstant.secondaryColor.withOpacity(0.3),
-            blurRadius: 15,
-            offset: Offset(0, 8),
+            color: AppConstant.secondaryColor.withOpacity(0.28),
+            blurRadius: 18,
+            offset: Offset(0, 10),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(26),
           onTap: () {
-            Get.to(() => const SignInScreen(),
-                transition: Transition.rightToLeft,
-                duration: Duration(milliseconds: 300)
-                );
+            Get.to(
+              () => const SignInScreen(),
+              transition: Transition.rightToLeftWithFade,
+              duration: Duration(milliseconds: 350),
+            );
           },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: [
-              Icon(
-                Icons.email_outlined,
-                color: Colors.white,
-                size: 24,
+              Positioned(
+                right: 18,
+                top: 14,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.35),
+                  ),
+                ),
               ),
-              SizedBox(width: 15),
-              Text(
-                "Continue with Email",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: 1.0,
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.email_outlined,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      "Sign in with Email",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.95),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    SizedBox(width: 14),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white.withOpacity(0.95),
+                      size: 24,
+                    ),
+                  ],
                 ),
               ),
             ],
