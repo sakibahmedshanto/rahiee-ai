@@ -12,7 +12,7 @@
     <application
         android:label="Rahiee.AI"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         
         <!-- Firebase Cloud Messaging Service -->
         <service
