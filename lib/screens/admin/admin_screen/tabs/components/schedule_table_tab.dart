@@ -168,7 +168,7 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
         controller: _headerScrollController,
         scrollDirection: Axis.horizontal,
         child: SizedBox(
-          width: 720,
+          width: 740,
           child: Row(
             children: [
               _buildHeaderCell('Schedule', 200),
@@ -176,7 +176,7 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
               _buildHeaderCell('Start Time', 120),
               _buildHeaderCell('End Time', 120),
               _buildHeaderCell('Status', 80),
-              _buildHeaderCell('Actions', 80),
+              _buildHeaderCell('Actions', 100),
             ],
           ),
         ),
@@ -188,9 +188,17 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
     return Container(
       width: width,
       height: 50,
-      padding: EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.centerLeft,
-      child: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -220,7 +228,7 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
         controller: _dataScrollController,
         scrollDirection: Axis.horizontal,
         child: SizedBox(
-          width: 720,
+          width: 740,
           child: Column(
             children: filteredSchedules.map((schedule) => _buildDataRow(schedule)).toList(),
           ),
@@ -236,12 +244,44 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
       ),
       child: Row(
         children: [
-          _buildDataCell(Text(schedule['title'] ?? 'Untitled'), 200),
-          _buildDataCell(Text(schedule['department'] ?? 'Unknown'), 120),
-          _buildDataCell(Text(_formatDateTime(schedule['start_date_time'])), 120),
-          _buildDataCell(Text(_formatDateTime(schedule['end_date_time'])), 120),
+          _buildDataCell(
+            Text(
+              schedule['title'] ?? 'Untitled',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 13),
+            ),
+            200,
+          ),
+          _buildDataCell(
+            Text(
+              schedule['department'] ?? 'Unknown',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12),
+            ),
+            120,
+          ),
+          _buildDataCell(
+            Text(
+              _formatDateTime(schedule['start_date_time']),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11),
+            ),
+            120,
+          ),
+          _buildDataCell(
+            Text(
+              _formatDateTime(schedule['end_date_time']),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11),
+            ),
+            120,
+          ),
           _buildDataCell(_buildStatusChip(), 80),
-          _buildDataCell(_buildActionButtons(schedule), 80),
+          _buildDataCell(_buildActionButtons(schedule), 100),
         ],
       ),
     );
@@ -251,7 +291,7 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
     return Container(
       width: width,
       height: 60,
-      padding: EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       alignment: Alignment.centerLeft,
       child: child,
     );
@@ -271,16 +311,32 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
   Widget _buildActionButtons(Map<String, dynamic> schedule) {
     return Row(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        IconButton(
-          onPressed: () => _viewDetails(schedule),
-          icon: Icon(Icons.visibility, size: 16),
-          color: AppConstant.primaryColor,
+        InkWell(
+          onTap: () => _viewDetails(schedule),
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.visibility,
+              size: 20,
+              color: AppConstant.primaryColor,
+            ),
+          ),
         ),
-        IconButton(
-          onPressed: () => _editSchedule(schedule),
-          icon: Icon(Icons.edit, size: 16),
-          color: Colors.orange,
+        SizedBox(width: 8),
+        InkWell(
+          onTap: () => _editSchedule(schedule),
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.edit,
+              size: 20,
+              color: Colors.orange,
+            ),
+          ),
         ),
       ],
     );
@@ -303,7 +359,8 @@ class _ScheduleTableTabState extends State<ScheduleTableTab> {
       final localDateTime = TimezoneUtils.parseToLocal(dateTime);
       if (localDateTime == null) return 'Invalid';
       
-      return '${localDateTime.day}/${localDateTime.month}/${localDateTime.year} ${localDateTime.hour}:${localDateTime.minute.toString().padLeft(2, '0')}';
+      // More compact format to prevent overflow
+      return '${localDateTime.day.toString().padLeft(2, '0')}/${localDateTime.month.toString().padLeft(2, '0')}/${localDateTime.year}\n${localDateTime.hour.toString().padLeft(2, '0')}:${localDateTime.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return 'Invalid';
     }
