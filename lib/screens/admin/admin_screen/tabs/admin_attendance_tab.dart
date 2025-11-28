@@ -5,16 +5,54 @@ import '../../../../utils/app_constant.dart';
 import 'components/attendance_summary_tab.dart';
 import 'components/attendance_table_tab.dart';
 
-class EnhancedAdminAttendanceTab extends StatelessWidget {
+class EnhancedAdminAttendanceTab extends StatefulWidget {
   const EnhancedAdminAttendanceTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final AdminController controller = Get.find<AdminController>();
+  State<EnhancedAdminAttendanceTab> createState() => _EnhancedAdminAttendanceTabState();
+}
 
-    return DefaultTabController(
+class _EnhancedAdminAttendanceTabState extends State<EnhancedAdminAttendanceTab> 
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late AdminController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<AdminController>();
+    
+    // Initialize tab controller with the selected index from controller
+    _tabController = TabController(
       length: 2,
-      child: Scaffold(
+      vsync: this,
+      initialIndex: controller.attendanceTabIndex.value,
+    );
+    
+    // Listen to controller changes
+    ever(controller.attendanceTabIndex, (index) {
+      if (_tabController.index != index) {
+        _tabController.animateTo(index);
+      }
+    });
+    
+    // Update controller when tab changes
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging || _tabController.index != controller.attendanceTabIndex.value) {
+        controller.attendanceTabIndex.value = _tabController.index;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
         backgroundColor: Colors.grey[50],
         body: Column(
           children: [
@@ -27,6 +65,7 @@ class EnhancedAdminAttendanceTab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(25),
               ),
               child: TabBar(
+                controller: _tabController,
                 physics: NeverScrollableScrollPhysics(), // Disable tab scrolling
                 indicator: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
@@ -85,6 +124,7 @@ class EnhancedAdminAttendanceTab extends StatelessWidget {
             // Tab Views
             Expanded(
               child: TabBarView(
+                controller: _tabController,
                 physics: NeverScrollableScrollPhysics(), // Disable tab view scrolling
                 children: [
                   AttendanceSummaryTab(controller: controller),
@@ -94,7 +134,6 @@ class EnhancedAdminAttendanceTab extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

@@ -22,6 +22,7 @@ class AdminController extends GetxController {
   
   // Tab navigation
   final RxInt selectedTabIndex = 0.obs;
+  final RxInt attendanceTabIndex = 0.obs; // 0 = Summary, 1 = Table
   
   // Dashboard data
   final Rx<AdminDashboardSummaryModel?> dashboardSummary = Rx<AdminDashboardSummaryModel?>(null);

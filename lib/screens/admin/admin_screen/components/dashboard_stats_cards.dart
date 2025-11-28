@@ -85,6 +85,9 @@ class DashboardStatsCards extends StatelessWidget {
     controller.tableSelectedStatus.value = statusFilter;
     controller.tableSelectedDateRange.value = 'Today';
     
+    // Set attendance tab to Table (index 1)
+    controller.attendanceTabIndex.value = 1;
+    
     // Load the filtered data
     controller.loadAttendanceTableData();
     
