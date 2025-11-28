@@ -5,7 +5,7 @@ class UserModel {
   final String employeeId;
   final String username;
   final String email;
-  final String phone;
+  final String? phone; // Optional phone number
   final String? userImg; // Optional profile image
   final String? userDeviceToken; // Optional for push notifications
   final String fullName;
@@ -39,7 +39,7 @@ class UserModel {
     required this.employeeId,
     required this.username,
     required this.email,
-    required this.phone,
+    this.phone, // Optional phone number
     required this.fullName,
     required this.department,
     required this.position,
@@ -102,7 +102,7 @@ class UserModel {
       employeeId: json['employee_id']?.toString() ?? '',
       username: json['username']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
-      phone: json['phone']?.toString() ?? '',
+      phone: json['phone']?.toString(), // Nullable
       fullName: json['full_name']?.toString() ?? '',
       department: json['department']?.toString() ?? '',
       position: json['position']?.toString() ?? '',

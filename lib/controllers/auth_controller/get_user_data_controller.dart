@@ -66,8 +66,8 @@ class GetUserDataController extends GetxController {
       };
 
       // Add optional fields that might exist in the old schema
-      if (userModel.phone.isNotEmpty) {
-        minimalUserMap['phone_number'] = userModel.phone; // Old schema uses phone_number
+      if (userModel.phone != null && userModel.phone!.isNotEmpty) {
+        minimalUserMap['phone_number'] = userModel.phone!; // Old schema uses phone_number
       }
       
       if (userModel.department.isNotEmpty) {

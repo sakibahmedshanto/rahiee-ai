@@ -330,7 +330,8 @@ class EmployeeCard extends StatelessWidget {
                   _buildDetailSection('Personal Information', [
                     _buildDetailRow('Employee ID', employee.employeeId),
                     _buildDetailRow('Email', employee.email),
-                    _buildDetailRow('Phone', employee.phone),
+                    if (employee.phone != null)
+                      _buildDetailRow('Phone', employee.phone!),
                     if (employee.emergencyContact != null)
                       _buildDetailRow('Emergency Contact', employee.emergencyContact!),
                     if (employee.emergencyPhone != null)

@@ -235,19 +235,19 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
             ),
             const SizedBox(height: 16),
             
-            // Phone Field
+            // Phone Field (Optional)
             _buildInputField(
               controller: userPhone,
-              hint: 'Phone Number',
+              hint: 'Phone Number (Optional)',
               icon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 16),
             
-            // City Field
+            // City Field (Optional)
             _buildInputField(
               controller: userCity,
-              hint: 'City',
+              hint: 'City (Optional)',
               icon: Icons.location_on_outlined,
               keyboardType: TextInputType.text,
             ),
@@ -412,9 +412,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     final city = userCity.text.trim();
     final password = userPassword.text.trim();
 
-    // Quick validation
-    if (name.isEmpty || email.isEmpty || phone.isEmpty || city.isEmpty || password.isEmpty) {
-      _showErrorSnackbar("Please enter all details");
+    // Quick validation - only name, email, and password are required
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      _showErrorSnackbar("Please enter name, email, and password");
       return;
     }
 

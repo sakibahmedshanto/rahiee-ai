@@ -105,7 +105,7 @@ class LandingController extends GetxController {
     return userModel.email;
   }
 
-  String get userPhone {
+  String? get userPhone {
     return userModel.phone;
   }
 

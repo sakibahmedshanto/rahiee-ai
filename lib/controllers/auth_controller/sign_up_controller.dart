@@ -26,13 +26,19 @@ class SignUpController extends GetxController {
       EasyLoading.show(status: "Please wait");
       
       // Create user account in Supabase Auth
+      final Map<String, dynamic> userData = {
+        'full_name': userName,
+      };
+      
+      // Only add phone if provided
+      if (userPhone.isNotEmpty) {
+        userData['phone'] = userPhone;
+      }
+      
       final AuthResponse? response = await _supabaseService.signUpWithEmail(
         userEmail,
         userPassword,
-        data: {
-          'full_name': userName,
-          'phone': userPhone,
-        },
+        data: userData,
       );
 
       if (response?.user != null) {
@@ -42,7 +48,7 @@ class SignUpController extends GetxController {
           employeeId: 'EMP-${response.user!.id.substring(0, 8).toUpperCase()}', // Generate employee ID
           username: userName,
           email: userEmail,
-          phone: userPhone,
+          phone: userPhone.isNotEmpty ? userPhone : null, // Optional phone
           fullName: userName, // Using username as fullName
           department: 'General', // Default department
           position: 'Employee', // Default position

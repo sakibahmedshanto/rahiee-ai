@@ -143,7 +143,7 @@ class ProfileScreen extends StatelessWidget {
         _buildInfoCard(
           icon: Icons.phone_outlined,
           title: 'Phone',
-          value: controller.userPhone,
+          value: controller.userPhone ?? 'Not provided',
         ),
       ],
     );
