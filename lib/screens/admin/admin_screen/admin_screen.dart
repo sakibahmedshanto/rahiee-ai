@@ -26,7 +26,6 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
-  final RxInt _selectedIndex = 0.obs;
   late final AdminController adminController;
 
   // Get current user - either from widget parameter or from session/service
@@ -66,7 +65,7 @@ class _AdminScreenState extends State<AdminScreen> {
       body: SafeArea(
         bottom: false,
         child: Obx(() {
-          switch (_selectedIndex.value) {
+          switch (adminController.selectedTabIndex.value) {
             case 0:
               return const AdminDashboardTab();
             case 1:
@@ -83,7 +82,7 @@ class _AdminScreenState extends State<AdminScreen> {
         }),
       ),
       bottomNavigationBar: AdminBottomNavigation(
-        selectedIndex: _selectedIndex,
+        selectedIndex: adminController.selectedTabIndex,
       ),
     );
   }
@@ -95,7 +94,7 @@ class _AdminScreenState extends State<AdminScreen> {
       elevation: 0,
       title: Obx(() {
         String title = 'Admin Dashboard';
-        switch (_selectedIndex.value) {
+        switch (adminController.selectedTabIndex.value) {
           case 0:
             title = 'Admin Dashboard';
             break;

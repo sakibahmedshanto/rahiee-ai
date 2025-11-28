@@ -489,9 +489,11 @@ class AdminSummaryTab extends StatelessWidget {
   }
 
 
-  Color _getAttendanceColor(int rate) {
-    if (rate >= 90) return AppConstant.successColor;
-    if (rate >= 75) return AppConstant.warningColor;
+  Color _getAttendanceColor(dynamic rate) {
+    // Convert to int if it's a double
+    final intRate = rate is double ? rate.toInt() : (rate as int);
+    if (intRate >= 90) return AppConstant.successColor;
+    if (intRate >= 75) return AppConstant.warningColor;
     return AppConstant.errorColor;
   }
 

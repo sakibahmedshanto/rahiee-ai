@@ -117,7 +117,7 @@ class _AttendanceTableTabState extends State<AttendanceTableTab> {
                 child: _buildFilterDropdown(
                   'Status',
                   widget.controller.tableSelectedStatus.value,
-                  ['All Status', 'Present', 'Absent', 'Late', 'Sick Leave'],
+                  ['All Status', 'Present', 'Absent', 'Late', 'Pending', 'Granted'],
                   (value) {
                     widget.controller.tableSelectedStatus.value = value!;
                     widget.controller.loadAttendanceTableData();

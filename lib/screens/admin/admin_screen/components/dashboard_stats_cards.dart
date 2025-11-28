@@ -26,6 +26,7 @@ class DashboardStatsCards extends StatelessWidget {
                 subtitle: "Today's Check-ins.",
                 trend: controller.getCheckInsTrend(),
                 trendColor: AppConstant.successColor,
+                onTap: () => _navigateToAttendance(controller, 'Present'),
               ),
             ),
             SizedBox(width: 12),
@@ -39,6 +40,7 @@ class DashboardStatsCards extends StatelessWidget {
                 trend: controller.getPendingTrend(),
                 trendColor: AppConstant.errorColor,
                 isAlert: controller.totalPendingApprovals.value > 0,
+                onTap: () => _navigateToAttendance(controller, 'Pending'),
               ),
             ),
           ],
@@ -57,6 +59,7 @@ class DashboardStatsCards extends StatelessWidget {
                 subtitle: 'Late Arrivals.',
                 trend: controller.getLateTrend(),
                 trendColor: AppConstant.successColor,
+                onTap: () => _navigateToAttendance(controller, 'Late'),
               ),
             ),
             SizedBox(width: 12),
@@ -68,12 +71,25 @@ class DashboardStatsCards extends StatelessWidget {
                 color: Colors.lightBlue,
                 subtitle: 'Active Sessions.',
                 badge: 'Live',
+                onTap: () => _navigateToAttendance(controller, 'Granted'),
               ),
             ),
           ],
         ),
       ],
     ));
+  }
+
+  void _navigateToAttendance(AdminController controller, String statusFilter) {
+    // Set the filter in the controller
+    controller.tableSelectedStatus.value = statusFilter;
+    controller.tableSelectedDateRange.value = 'Today';
+    
+    // Load the filtered data
+    controller.loadAttendanceTableData();
+    
+    // Navigate to attendance tab (index 2)
+    controller.selectedTabIndex.value = 2;
   }
 
   Widget _buildStatCard({
@@ -86,25 +102,29 @@ class DashboardStatsCards extends StatelessWidget {
     String? badge,
     String? trend,
     Color? trendColor,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppConstant.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isAlert ? color.withOpacity(0.3) : AppConstant.borderColor,
-          width: isAlert ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppConstant.shadowColor,
-            blurRadius: 8,
-            offset: Offset(0, 2),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppConstant.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isAlert ? color.withOpacity(0.3) : AppConstant.borderColor,
+            width: isAlert ? 2 : 1,
           ),
-        ],
-      ),
-      child: Column(
+          boxShadow: [
+            BoxShadow(
+              color: AppConstant.shadowColor,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -250,6 +270,7 @@ class DashboardStatsCards extends StatelessWidget {
             ),
           ],
         ],
+        ),
       ),
     );
   }

@@ -20,6 +20,9 @@ class AdminController extends GetxController {
   final RxBool isRefreshing = false.obs;
   final RxString errorMessage = ''.obs;
   
+  // Tab navigation
+  final RxInt selectedTabIndex = 0.obs;
+  
   // Dashboard data
   final Rx<AdminDashboardSummaryModel?> dashboardSummary = Rx<AdminDashboardSummaryModel?>(null);
   

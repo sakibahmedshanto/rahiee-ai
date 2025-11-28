@@ -26,6 +26,29 @@ class AdminDashboardSummaryModel {
   });
 
   factory AdminDashboardSummaryModel.fromMap(Map<String, dynamic> json) {
+    // Parse department_breakdown - it can be either a Map or a List
+    List<DepartmentBreakdownModel> parsedDepartments = [];
+    if (json['department_breakdown'] != null) {
+      final deptData = json['department_breakdown'];
+      if (deptData is List) {
+        // If it's a list, parse each item
+        parsedDepartments = deptData
+            .map((dept) => DepartmentBreakdownModel.fromMap(dept as Map<String, dynamic>))
+            .toList();
+      } else if (deptData is Map) {
+        // If it's a map/object, convert to list of department breakdown models
+        parsedDepartments = (deptData as Map<String, dynamic>).entries.map((entry) {
+          return DepartmentBreakdownModel(
+            department: entry.key,
+            totalEmployees: (entry.value as Map<String, dynamic>)['total_employees'] ?? 0,
+            checkedIn: (entry.value as Map<String, dynamic>)['checked_in'] ?? 0,
+            pendingCount: (entry.value as Map<String, dynamic>)['pending_count'] ?? 0,
+            totalHours: ((entry.value as Map<String, dynamic>)['total_hours'] ?? 0.0).toDouble(),
+          );
+        }).toList();
+      }
+    }
+    
     return AdminDashboardSummaryModel(
       date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
       totalEmployees: json['total_employees'] ?? 0,
@@ -36,11 +59,7 @@ class AdminDashboardSummaryModel {
       totalHoursToday: (json['total_hours_today'] ?? 0.0).toDouble(),
       totalAmountToday: (json['total_amount_today'] ?? 0.0).toDouble(),
       unpaidAmount: (json['unpaid_amount'] ?? 0.0).toDouble(),
-      departmentBreakdown: json['department_breakdown'] != null
-          ? (json['department_breakdown'] as List)
-              .map((dept) => DepartmentBreakdownModel.fromMap(dept))
-              .toList()
-          : [],
+      departmentBreakdown: parsedDepartments,
       generatedAt: json['generated_at'] != null ? DateTime.parse(json['generated_at']) : DateTime.now(),
     );
   }
