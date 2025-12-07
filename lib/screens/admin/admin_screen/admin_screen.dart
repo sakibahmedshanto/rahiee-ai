@@ -55,6 +55,33 @@ class _AdminScreenState extends State<AdminScreen> {
   void initState() {
     super.initState();
     adminController = Get.put(AdminController());
+    
+    // Listen to tab changes and refresh data
+    ever(adminController.selectedTabIndex, (index) {
+      _refreshCurrentTab(index);
+    });
+  }
+  
+  void _refreshCurrentTab(int index) {
+    // Refresh data when switching tabs
+    switch (index) {
+      case 0: // Dashboard
+        adminController.loadDashboardSummary();
+        break;
+      case 1: // Employees
+        adminController.loadAllEmployees();
+        break;
+      case 2: // Attendance
+        adminController.loadPendingAttendance();
+        adminController.loadAttendanceTableData();
+        break;
+      case 3: // Schedules
+        adminController.loadActiveSchedules();
+        break;
+      case 4: // Summary
+        adminController.loadSummaryReportsData();
+        break;
+    }
   }
 
   @override

@@ -6,6 +6,9 @@ import 'package:rahiee_ai/screens/attendance_history_screen/attendance_history_s
 import '../../models/user_model.dart';
 import '../../utils/app_constant.dart';
 import '../../controllers/landing_screen_controller/landing_controller.dart';
+import '../../controllers/schedule_controller.dart';
+import '../../controllers/attendance_history_controller.dart';
+import '../../services/notification_history_service.dart';
 import '../profile_screen/profile_screen.dart';
 import '../schedule_screen/schedule_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -32,6 +35,34 @@ class _LandingScreenState extends State<LandingScreen> {
     super.initState();
     controller = Get.put(LandingController());
     controller.initializeWithUser(widget.userModel);
+    
+    // Listen to tab changes and refresh data
+    ever(_selectedIndex, (index) {
+      _refreshCurrentTab(index);
+    });
+  }
+  
+  void _refreshCurrentTab(int index) {
+    // Refresh data when switching tabs
+    switch (index) {
+      case 0: // Schedule
+        if (Get.isRegistered<ScheduleController>()) {
+          Get.find<ScheduleController>().refreshData();
+        }
+        break;
+      case 1: // Attendance History
+        if (Get.isRegistered<AttendanceHistoryController>()) {
+          Get.find<AttendanceHistoryController>().refreshData();
+        }
+        break;
+      case 2: // Notifications
+        if (Get.isRegistered<NotificationHistoryService>()) {
+          Get.find<NotificationHistoryService>().fetchNotifications(refresh: true);
+        }
+        break;
+      case 3: // Profile - no refresh needed
+        break;
+    }
   }
 
   @override

@@ -9,7 +9,10 @@ class AttendanceHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AttendanceHistoryController controller = Get.put(AttendanceHistoryController());
+    // Use find or put to ensure controller persists and loads data
+    final AttendanceHistoryController controller = Get.isRegistered<AttendanceHistoryController>()
+        ? Get.find<AttendanceHistoryController>()
+        : Get.put(AttendanceHistoryController());
     final ScrollController scrollController = ScrollController();
     
     // Add scroll listener for lazy loading

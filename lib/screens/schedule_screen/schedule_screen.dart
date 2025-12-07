@@ -15,7 +15,10 @@ class ScheduleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ScheduleController());
+    // Use find or put to ensure controller persists and loads data
+    final controller = Get.isRegistered<ScheduleController>() 
+        ? Get.find<ScheduleController>() 
+        : Get.put(ScheduleController());
 
     return Scaffold(
       backgroundColor: AppConstant.backgroundColor,

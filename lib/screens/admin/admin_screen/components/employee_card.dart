@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../models/user_model.dart';
 import '../../../../utils/app_constant.dart';
+import '../../../../services/account_deletion_service.dart';
+import '../../../../controllers/admin_controllers/admin_controller.dart';
 
 class EmployeeCard extends StatelessWidget {
   final UserModel employee;
@@ -197,6 +199,27 @@ class EmployeeCard extends StatelessWidget {
                           employee.isActive ? 'Deactivate' : 'Activate',
                           style: TextStyle(
                             color: employee.isActive ? AppConstant.errorColor : AppConstant.successColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_forever_outlined,
+                          size: 16,
+                          color: AppConstant.errorColor,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Delete Account',
+                          style: TextStyle(
+                            color: AppConstant.errorColor,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -451,6 +474,9 @@ class EmployeeCard extends StatelessWidget {
       case 'deactivate':
         _confirmStatusChange(context, action == 'activate');
         break;
+      case 'delete':
+        _confirmAccountDeletion(context);
+        break;
     }
   }
 
@@ -483,5 +509,223 @@ class EmployeeCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _confirmAccountDeletion(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: AppConstant.backgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppConstant.errorColor, size: 28),
+            SizedBox(width: 12),
+            Text(
+              'Delete Account',
+              style: TextStyle(color: AppConstant.textPrimary),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You are about to permanently delete the account of:',
+              style: TextStyle(color: AppConstant.textPrimary),
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppConstant.cardColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppConstant.borderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    employee.fullName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppConstant.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    employee.email,
+                    style: TextStyle(color: AppConstant.textSecondary),
+                  ),
+                  Text(
+                    'ID: ${employee.employeeId}',
+                    style: TextStyle(color: AppConstant.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              '⚠️ Warning: This action will:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppConstant.errorColor,
+              ),
+            ),
+            SizedBox(height: 8),
+            _buildWarningItem('Delete all attendance records'),
+            _buildWarningItem('Delete all schedule assignments'),
+            _buildWarningItem('Delete all payment transactions'),
+            _buildWarningItem('Remove all personal data'),
+            _buildWarningItem('This action cannot be undone'),
+            SizedBox(height: 16),
+            Text(
+              'Type "DELETE" to confirm:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppConstant.textPrimary,
+              ),
+            ),
+            SizedBox(height: 8),
+            TextField(
+              decoration: InputDecoration(
+                hintText: 'Type DELETE',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+              onChanged: (value) {
+                // Store the value for confirmation
+              },
+              textCapitalization: TextCapitalization.characters,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppConstant.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => _performAccountDeletion(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppConstant.errorColor,
+              foregroundColor: Colors.white,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.delete_forever, size: 18),
+                SizedBox(width: 4),
+                Text('Delete Account'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWarningItem(String text) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(
+            Icons.close,
+            size: 16,
+            color: AppConstant.errorColor,
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppConstant.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performAccountDeletion(BuildContext context) async {
+    try {
+      Get.back(); // Close dialog
+      
+      // Show loading indicator
+      Get.dialog(
+        WillPopScope(
+          onWillPop: () async => false,
+          child: Center(
+            child: Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppConstant.cardColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppConstant.primaryColor),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Deleting account...',
+                    style: TextStyle(color: AppConstant.textPrimary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        barrierDismissible: false,
+      );
+
+      // Perform deletion using AccountDeletionService
+      final deletionService = AccountDeletionService.to;
+      final result = await deletionService.deleteUserAccount(employee.uId);
+
+      Get.back(); // Close loading dialog
+
+      if (result['success'] == true) {
+        // Refresh employee list
+        final adminController = Get.find<AdminController>();
+        await adminController.loadAllEmployees();
+
+        Get.snackbar(
+          'Success',
+          'Account for ${employee.fullName} has been permanently deleted',
+          backgroundColor: AppConstant.successColor,
+          colorText: Colors.white,
+          duration: Duration(seconds: 3),
+          icon: Icon(Icons.check_circle, color: Colors.white),
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          result['message'] ?? 'Failed to delete account',
+          backgroundColor: AppConstant.errorColor,
+          colorText: Colors.white,
+          duration: Duration(seconds: 4),
+          icon: Icon(Icons.error, color: Colors.white),
+        );
+      }
+    } catch (e) {
+      Get.back(); // Close any open dialogs
+      Get.snackbar(
+        'Error',
+        'An error occurred while deleting the account: $e',
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+        duration: Duration(seconds: 4),
+        icon: Icon(Icons.error, color: Colors.white),
+      );
+    }
   }
 }
