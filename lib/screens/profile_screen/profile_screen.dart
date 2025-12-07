@@ -1,9 +1,13 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import '../../controllers/landing_screen_controller/landing_controller.dart';
+import '../../services/account_deletion_service.dart';
+import '../../services/supabase_service.dart';
 import '../../utils/app_constant.dart';
+import '../auth_ui/welcome_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -33,6 +37,11 @@ class ProfileScreen extends StatelessWidget {
             
             // Logout Button
             _buildLogoutButton(controller),
+            
+            SizedBox(height: 16),
+            
+            // Delete Account Button
+            _buildDeleteAccountButton(controller),
             
             SizedBox(height: 20),
           ],
@@ -305,5 +314,260 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildDeleteAccountButton(LandingController controller) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton.icon(
+        onPressed: () => _showDeleteAccountConfirmation(controller),
+        icon: Icon(
+          Icons.delete_forever,
+          color: AppConstant.errorColor,
+        ),
+        label: Text(
+          'Delete Account',
+          style: TextStyle(
+            color: AppConstant.errorColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(
+            color: AppConstant.errorColor,
+            width: 2,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountConfirmation(LandingController controller) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_rounded,
+              color: AppConstant.errorColor,
+              size: 28,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Delete Account?',
+                style: TextStyle(
+                  color: AppConstant.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This action is permanent and cannot be undone.',
+              style: TextStyle(
+                color: AppConstant.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'The following data will be permanently deleted:',
+              style: TextStyle(
+                color: AppConstant.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            SizedBox(height: 8),
+            _buildDeletionItem('Your profile and personal information'),
+            _buildDeletionItem('Your notification history'),
+            _buildDeletionItem('Your account access'),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppConstant.errorColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppConstant.errorColor.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: AppConstant.errorColor,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This cannot be undone',
+                      style: TextStyle(
+                        color: AppConstant.errorColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppConstant.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back(); // Close dialog
+              _handleDeleteAccount(controller);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppConstant.errorColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: Text(
+              'Delete Account',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  Widget _buildDeletionItem(String text) {
+    return Padding(
+      padding: EdgeInsets.only(left: 8, bottom: 4),
+      child: Row(
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            size: 16,
+            color: AppConstant.textSecondary,
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: AppConstant.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteAccount(LandingController controller) async {
+    try {
+      EasyLoading.show(status: 'Deleting account...');
+      
+      final supabaseService = Get.find<SupabaseService>();
+      final userId = supabaseService.currentUser?.id;
+      
+      if (userId == null) {
+        EasyLoading.dismiss();
+        Get.snackbar(
+          'Error',
+          'Unable to identify user. Please try again.',
+          backgroundColor: AppConstant.errorColor,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final accountDeletionService = Get.find<AccountDeletionService>();
+      final result = await accountDeletionService.deleteUserAccount(userId);
+      
+      EasyLoading.dismiss();
+      
+      if (result['success'] == true) {
+        // Sign out the user
+        await supabaseService.signOut();
+        
+        // Show success message
+        Get.snackbar(
+          'Account Deleted',
+          result['message'],
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: Duration(seconds: 5),
+        );
+        
+        // Navigate to welcome screen
+        Get.offAll(() => WelcomeScreen());
+      } else if (result['partial'] == true) {
+        // Partial deletion - profile removed but auth account needs manual deletion
+        await supabaseService.signOut();
+        
+        Get.snackbar(
+          'Deletion Initiated',
+          result['message'],
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: Duration(seconds: 7),
+        );
+        
+        Get.offAll(() => WelcomeScreen());
+      } else {
+        Get.snackbar(
+          'Deletion Failed',
+          result['message'],
+          backgroundColor: AppConstant.errorColor,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: Duration(seconds: 5),
+        );
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      Get.snackbar(
+        'Error',
+        'An unexpected error occurred. Please contact support at support@rahiee.ai',
+        backgroundColor: AppConstant.errorColor,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        duration: Duration(seconds: 5),
+      );
+    }
   }
 }

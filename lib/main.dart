@@ -13,6 +13,7 @@ import 'services/fcm_service.dart';
 import 'services/notification_service.dart';
 import 'services/notification_history_service.dart';
 import 'services/notification_integration_service.dart';
+import 'services/account_deletion_service.dart';
 import 'screens/auth_ui/splash_screen/splash_screen.dart';
 import 'screens/auth_ui/welcome_screen.dart';
 import 'screens/admin/admin_screen/admin_screen.dart';
@@ -45,6 +46,7 @@ Future<void> main() async {
   Get.put(FCMService());
   Get.put(NotificationService());
   Get.put(NotificationHistoryService());
+  Get.put(AccountDeletionService());
   
   // Initialize NotificationIntegrationService with lazy initialization
   Get.lazyPut(() => NotificationIntegrationService());
