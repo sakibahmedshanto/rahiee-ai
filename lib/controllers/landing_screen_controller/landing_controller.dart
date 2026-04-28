@@ -66,7 +66,7 @@ class LandingController extends GetxController {
         );
       });
       
-      print('Logout error: $e');
+      debugPrint('Logout error: $e');
     }
   }
 
@@ -132,7 +132,5 @@ class LandingController extends GetxController {
     Get.snackbar('Profile', 'Profile feature coming soon');
   }
 
-  void onSettingsPressed() {
-    Get.snackbar('Settings', 'Settings feature coming soon');
-  }
+  void onSettingsPressed() {}
 }

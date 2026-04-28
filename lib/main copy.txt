@@ -29,21 +29,13 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Request App Tracking Transparency permission on iOS 14+.
-  // This dialog is shown only once (first launch). The app works fully
-  // regardless of whether the user allows or denies — no features are
-  // gated behind this permission. This satisfies Apple Guideline 5.1.2.
-  try {
-    final trackingStatus = await AppTrackingTransparency.trackingAuthorizationStatus;
-    if (trackingStatus == TrackingStatus.notDetermined) {
-      // Small delay to avoid showing the dialog before the app UI is ready.
-      await Future.delayed(const Duration(milliseconds: 200));
-      // We intentionally do not use the returned status — the app behaves
-      // identically whether the user taps Allow or Don't Allow.
-      await AppTrackingTransparency.requestTrackingAuthorization();
-    }
-  } catch (_) {
-    // ATT is iOS-only. On other platforms or older iOS versions this is a no-op.
+  // Request App Tracking Transparency permission on iOS 14+
+  // Must be requested before any data collection (Firebase, Supabase, etc.)
+  final trackingStatus = await AppTrackingTransparency.trackingAuthorizationStatus;
+  if (trackingStatus == TrackingStatus.notDetermined) {
+    // Wait a moment before showing the dialog to avoid UI conflicts
+    await Future.delayed(const Duration(milliseconds: 200));
+    await AppTrackingTransparency.requestTrackingAuthorization();
   }
 
   // Initialize Firebase

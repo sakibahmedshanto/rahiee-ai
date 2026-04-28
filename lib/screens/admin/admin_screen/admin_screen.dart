@@ -193,40 +193,9 @@ class _AdminScreenState extends State<AdminScreen> {
                 : null,
           ),
           onSelected: (value) {
-            switch (value) {
-              case 'profile':
-                // Navigate to admin profile
-                break;
-              case 'settings':
-                // Navigate to admin settings
-                break;
-              case 'logout':
-                _showLogoutDialog();
-                break;
-            }
+            if (value == 'logout') _showLogoutDialog();
           },
           itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'profile',
-              child: Row(
-                children: [
-                  Icon(Icons.person_outline, color: AppConstant.textPrimary),
-                  SizedBox(width: 12),
-                  Text('Profile'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'settings',
-              child: Row(
-                children: [
-                  Icon(Icons.settings_outlined, color: AppConstant.textPrimary),
-                  SizedBox(width: 12),
-                  Text('Settings'),
-                ],
-              ),
-            ),
-            PopupMenuDivider(),
             PopupMenuItem(
               value: 'logout',
               child: Row(
