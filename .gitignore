@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Secret files - never commit real credentials
+google vision api/*.json
+!google vision api/*.example.json
+supabase/functions/send-notifications/*.json
+!supabase/functions/send-notifications/*.example.json
+.mcp.json
